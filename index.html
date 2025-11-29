@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Avian Arcana: Sky Lords (Refined)</title>
+    <title>Avian Arcana: Sky Lords (Zanholo Update)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@500;700&display=swap');
 
@@ -83,90 +83,127 @@
             text-shadow: 0 0 10px orange; display: none; animation: pulse 0.5s infinite;
         }
 
-        /* --- LOBBY UI --- */
+        /* --- LOBBY UI ATUALIZADA --- */
         #lobby-ui {
             position: absolute; width: 100%; height: 100%;
-            /* Fundo semi-transparente para ver o 3D atrás */
             background: radial-gradient(circle at center, rgba(26, 26, 46, 0.4) 0%, #000 100%);
             display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
             color: white; z-index: 10;
             pointer-events: auto;
         }
 
+        /* NAVEGAÇÃO SUPERIOR */
+        .lobby-nav {
+            display: flex; justify-content: center; gap: 40px;
+            margin-top: 20px; z-index: 20;
+        }
+        .nav-btn {
+            background: transparent; border: none; color: #aaa;
+            font-family: 'Black Ops One'; font-size: 24px; cursor: pointer;
+            text-transform: uppercase; padding: 10px 20px;
+            transition: all 0.3s; border-bottom: 2px solid transparent;
+        }
+        .nav-btn:hover { color: white; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .nav-btn.active { color: #ff00cc; border-bottom: 2px solid #ff00cc; text-shadow: 0 0 15px #ff00cc; }
+
+        .coin-display {
+            position: absolute; top: 30px; right: 40px;
+            font-size: 20px; color: #ffcc00; font-weight: bold;
+            background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 30px;
+            border: 2px solid #ffcc00; box-shadow: 0 0 15px rgba(255, 204, 0, 0.3);
+            display: flex; align-items: center; gap: 10px; z-index: 25;
+        }
+
+        /* PAGINAS */
+        .page-container {
+            flex: 1; position: relative; width: 100%; height: 100%;
+            display: none; /* Controlado via JS */
+        }
+        .page-container.active { display: block; }
+
+        /* PAGINA: INÍCIO */
+        .home-content {
+            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
+            display: flex; flex-direction: column; align-items: center; gap: 30px;
+            text-align: center;
+        }
         .lobby-title {
-            position: absolute; top: 40px; left: 60px;
-            font-family: 'Black Ops One'; font-size: 72px;
-            text-transform: uppercase;
+            font-family: 'Black Ops One'; font-size: 64px; text-transform: uppercase;
             background: linear-gradient(to bottom, #fff, #999);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 0 15px rgba(255,255,255,0.3));
+            margin-bottom: 20px;
         }
-
-        .coin-display {
-            position: absolute; top: 40px; right: 60px;
-            font-size: 24px; color: #ffcc00; font-weight: bold;
-            background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 30px;
-            border: 2px solid #ffcc00; box-shadow: 0 0 15px rgba(255, 204, 0, 0.3);
-            display: flex; align-items: center; gap: 10px;
-        }
-
-        .lobby-content { display: flex; width: 90%; height: 75%; margin-top: 80px; gap: 40px; }
-
-        .selection-panel {
-            width: 380px; display: flex; flex-direction: column; gap: 10px;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);
-            padding: 20px; border-radius: 0 20px 20px 0;
-            border-left: 4px solid #ff00cc; overflow-y: auto;
-        }
-
-        .bird-card {
-            background: linear-gradient(90deg, #222, #1a1a1a);
-            padding: 15px; cursor: pointer; border: 1px solid #333;
-            transition: all 0.2s; display: flex; align-items: center; justify-content: space-between;
-        }
-        .bird-card:hover { transform: translateX(5px); background: #333; }
-        .bird-card.active { border-color: #ff00cc; background: linear-gradient(90deg, #330033, #111); }
-        .bird-card.locked { opacity: 0.6; filter: grayscale(0.8); }
-        
-        .bird-icon { width: 40px; height: 40px; background: #555; border-radius: 50%; display: grid; place-items: center; font-weight: bold; }
-        .price-tag { font-size: 12px; color: #ffcc00; font-weight: bold; }
-
-        .stats-panel {
-            position: absolute; bottom: 40px; right: 60px;
-            width: 300px; background: rgba(0,0,0,0.6);
-            padding: 20px; border-radius: 10px; border-top: 3px solid #00ccff;
-        }
-
-        .map-selector {
-            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 20px;
-        }
+        .map-selector { display: flex; gap: 20px; margin-bottom: 20px; }
         .map-btn {
-            background: transparent; border: 2px solid #555; color: #aaa;
+            background: rgba(0,0,0,0.5); border: 2px solid #555; color: #aaa;
             padding: 10px 30px; font-family: 'Black Ops One'; font-size: 18px;
             cursor: pointer; transition: all 0.3s;
         }
-        .map-btn:hover { border-color: white; color: white; }
         .map-btn.active { background: white; color: black; border-color: white; box-shadow: 0 0 20px white; }
-
+        
         #start-btn {
-            position: absolute; top: 50%; right: 60px; transform: translateY(-50%);
-            padding: 20px 40px; font-size: 36px;
+            padding: 20px 60px; font-size: 42px;
             background: linear-gradient(45deg, #ff00cc, #6600ff);
             border: none; color: white; font-family: 'Black Ops One';
             cursor: pointer; clip-path: polygon(10% 0, 100% 0, 100% 80%, 90% 100%, 0 100%, 0 20%);
             transition: transform 0.2s, filter 0.2s;
         }
-        #start-btn:hover { transform: translateY(-50%) scale(1.05); filter: brightness(1.2); }
-        #start-btn:disabled { background: #555; cursor: not-allowed; filter: none; }
+        #start-btn:hover { transform: scale(1.05); filter: brightness(1.2); }
 
-        #buy-btn {
-            width: 100%; padding: 10px; margin-top: 10px;
-            background: #ffcc00; border: none; color: black;
-            font-weight: bold; cursor: pointer; display: none;
+        /* PAGINA: VESTIÁRIO */
+        .locker-layout {
+            display: flex; width: 100%; height: 100%;
+            justify-content: space-between; padding: 40px; box-sizing: border-box;
+        }
+        .locker-column {
+            width: 350px; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px);
+            border-radius: 15px; border: 1px solid #333;
+            display: flex; flex-direction: column; padding: 20px; gap: 10px;
+            height: 80%; margin-top: 50px; overflow-y: auto;
+        }
+        .locker-column h3 { margin: 0 0 15px 0; color: #ff00cc; font-family: 'Black Ops One'; text-align: center;}
+        
+        .bird-card, .skin-card {
+            background: linear-gradient(90deg, #222, #1a1a1a);
+            padding: 12px; cursor: pointer; border: 1px solid #333;
+            transition: all 0.2s; display: flex; align-items: center; justify-content: space-between;
+        }
+        .bird-card:hover, .skin-card:hover { transform: translateX(5px); background: #333; }
+        .bird-card.active, .skin-card.active { border-color: #ff00cc; background: linear-gradient(90deg, #330033, #111); }
+        .bird-card.locked, .skin-card.locked { opacity: 0.6; filter: grayscale(0.8); }
+
+        .price-btn {
+            background: #ffcc00; border: none; color: black; font-weight: bold;
+            padding: 5px 10px; cursor: pointer; border-radius: 4px; font-size: 12px;
         }
 
+        /* PAGINA: PASSE */
+        .pass-container {
+            width: 80%; height: 70%; margin: 80px auto;
+            background: rgba(0,0,0,0.8); border: 2px solid #444;
+            border-radius: 20px; padding: 40px; overflow-y: auto;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .pass-header { text-align: center; margin-bottom: 40px; }
+        .pass-header h1 { margin: 0; font-family: 'Black Ops One'; font-size: 48px; color: #ffcc00; }
+        .pass-track {
+            display: flex; gap: 20px; overflow-x: auto; width: 100%;
+            padding-bottom: 20px;
+        }
+        .pass-tier {
+            min-width: 140px; height: 180px; background: #222;
+            border: 1px solid #444; border-radius: 10px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .pass-tier.claimed { border-color: #0f0; background: #1a2e1a; opacity: 0.5; }
+        .pass-tier.locked { opacity: 0.5; }
+        .tier-num { position: absolute; top: 10px; left: 10px; font-weight: bold; color: #aaa; }
+        .tier-reward { font-size: 24px; margin: 10px 0; }
+        .tier-label { font-size: 12px; color: #ccc; text-align: center; }
+
+        /* GAME OVER */
         #game-over-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 100; display: none;
@@ -187,30 +224,69 @@
 </head>
 <body>
 
-    <!-- LOBBY -->
+    <!-- LOBBY UI -->
     <div id="lobby-ui">
-        <div class="lobby-title">Sky Lords<br><span style="font-size:30px; letter-spacing: 5px; color:#ff00cc">Battle Royale</span></div>
+        <!-- Navegação Superior -->
+        <div class="lobby-nav">
+            <button class="nav-btn active" onclick="switchTab('home')">Início</button>
+            <button class="nav-btn" onclick="switchTab('locker')">Vestiário</button>
+            <button class="nav-btn" onclick="switchTab('pass')">Passe</button>
+        </div>
+
         <div class="coin-display">🪙 <span id="player-coins">0</span></div>
-        
-        <div class="lobby-content">
-            <div class="selection-panel">
-                <div style="font-size:14px; color:#aaa; margin-bottom:10px;">LOJA DE PÁSSAROS</div>
-                <div id="bird-list"></div>
+
+        <!-- PÁGINA: INÍCIO -->
+        <div id="page-home" class="page-container active">
+            <div class="home-content">
+                <div class="lobby-title">Sky Lords<br><span style="font-size:30px; letter-spacing: 5px; color:#ff00cc">Battle Royale</span></div>
+                
+                <div class="map-selector">
+                    <button class="map-btn active" onclick="selectMap('woods')">FLORESTA</button>
+                    <button class="map-btn" onclick="selectMap('desert')">DESERTO</button>
+                    <button class="map-btn" onclick="selectMap('arctic')">GELO</button>
+                </div>
+
+                <button id="start-btn" onclick="startGame()">JOGAR</button>
             </div>
         </div>
 
-        <div class="stats-panel" id="stats-display"></div>
+        <!-- PÁGINA: VESTIÁRIO -->
+        <div id="page-locker" class="page-container">
+            <div class="locker-layout">
+                <!-- Coluna de Pássaros (Classes) -->
+                <div class="locker-column">
+                    <h3>CLASSES</h3>
+                    <div id="locker-bird-list"></div>
+                </div>
+                
+                <!-- Stats no Centro (Opcional, ou usar o 3D) -->
+                <div style="flex:1;"></div> 
 
-        <div class="map-selector">
-            <button class="map-btn active" onclick="selectMap('woods')">FLORESTA</button>
-            <button class="map-btn" onclick="selectMap('desert')">DESERTO</button>
-            <button class="map-btn" onclick="selectMap('arctic')">GELO</button>
+                <!-- Coluna de Skins -->
+                <div class="locker-column">
+                    <h3>SKINS</h3>
+                    <div id="locker-skin-list"></div>
+                    <div id="skin-stats-panel" class="stats-panel" style="position:relative; width:auto; bottom:auto; right:auto; margin-top:20px;"></div>
+                </div>
+            </div>
         </div>
 
-        <button id="start-btn">JOGAR</button>
+        <!-- PÁGINA: PASSE -->
+        <div id="page-pass" class="page-container">
+            <div class="pass-container">
+                <div class="pass-header">
+                    <h1>PASSE DE BATALHA</h1>
+                    <div style="color:#aaa;">TEMPORADA 1: ASAS DE FOGO</div>
+                    <div style="margin-top:10px; font-weight:bold;">NÍVEL ATUAL: <span id="bp-level" style="color:#0f0">1</span></div>
+                </div>
+                <div class="pass-track" id="pass-track-list">
+                    <!-- Gerado via JS -->
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- HUD -->
+    <!-- HUD (IN-GAME) -->
     <div id="game-ui">
         <div id="crosshair"></div>
         <div id="storm-warning">! TEMPESTADE !</div>
@@ -229,7 +305,6 @@
                 <div style="display:flex; justify-content:space-between; font-weight:bold; margin-top:5px;"><span>ENERGIA</span> <span id="mana-val">100</span></div>
                 <div class="bar-container"><div class="bar-fill" id="mana-bar"></div></div>
                 
-                <!-- Nova Seção de Habilidade -->
                 <div id="ability-box">
                     <div id="ability-icon">Q</div>
                     <div>
@@ -265,35 +340,55 @@
         // --- SISTEMA DE DADOS E ECONOMIA ---
         let playerData = {
             coins: 100,
-            unlocked: ['eagle']
+            unlockedBirds: ['eagle'],
+            unlockedSkins: ['default'], // IDs globais de skins
+            bpLevel: 1,
+            bpExp: 0
         };
 
-        if(localStorage.getItem('skyLordsSave')) {
-            try { playerData = JSON.parse(localStorage.getItem('skyLordsSave')); } catch(e) {}
+        if(localStorage.getItem('skyLordsSaveV3')) {
+            try { playerData = JSON.parse(localStorage.getItem('skyLordsSaveV3')); } catch(e) {}
+        }
+
+        // --- DADOS DO JOGO ---
+        const BIRD_STATS = {
+            eagle:       { name: "Águia Real",   hp: 110, mana: 120, speed: 0.8, turn: 0.9, baseColor: 0xffaa00, price: 0,    desc: "Equilibrada. Habilidade: Empurrão Sônico.", abilityName: "Onda Sônica", abilityCD: 5, abilityType: 'push' },
+            falcon:      { name: "Falcão Veloz", hp: 80,  mana: 100, speed: 1.2, turn: 0.6, baseColor: 0x3366ff, price: 300,  desc: "Mergulho supersônico. Habilidade: Turbo.", abilityName: "Turbo", abilityCD: 8, abilityType: 'dash' },
+            zanholo:     { name: "Zanholo",      hp: 100, mana: 130, speed: 1.1, turn: 0.8, baseColor: 0x111111, price: 9999, desc: "Tucano do Passe. Ágil e exótico. Habilidade: Tropicália.", abilityName: "Tropicália", abilityCD: 8, abilityType: 'dash' },
+            owl:         { name: "Coruja Sábia", hp: 130, mana: 150, speed: 0.6, turn: 1.1, baseColor: 0xeeeeee, price: 500,  desc: "Silenciosa. Habilidade: Invisibilidade.", abilityName: "Furtividade", abilityCD: 10, abilityType: 'stealth' },
+            hummingbird: { name: "Beija-flor",   hp: 50,  mana: 200, speed: 0.9, turn: 1.5, baseColor: 0x00ffcc, price: 800,  desc: "Difícil de acertar. Habilidade: Cura Rápida.", abilityName: "Néctar", abilityCD: 12, abilityType: 'heal' },
+            vulture:     { name: "Abutre",       hp: 160, mana: 80,  speed: 0.7, turn: 0.7, baseColor: 0xaa4444, price: 600,  desc: "Tanque. Habilidade: Escudo de Ossos.", abilityName: "Escudo", abilityCD: 15, abilityType: 'shield' },
+            crow:        { name: "Corvo",        hp: 90,  mana: 140, speed: 0.85, turn: 1.2, baseColor: 0x222222, price: 1000, desc: "Sombrio. Habilidade: Teleporte.", abilityName: "Blink", abilityCD: 6, abilityType: 'teleport' },
+            phoenix:     { name: "Fênix",        hp: 120, mana: 180, speed: 0.9, turn: 0.8, baseColor: 0xff4500, price: 2500, desc: "Renascida. Habilidade: Explosão Solar.", abilityName: "Nova", abilityCD: 12, abilityType: 'nova' },
+            nagas:       { name: "Nagas",        hp: 300, mana: 300, speed: 1.0, turn: 1.0, baseColor: 0x4b0082, price: 10000, desc: "LENDÁRIO. O terror dos céus. Habilidade: Buraco Negro.", abilityName: "Vazio", abilityCD: 20, abilityType: 'void' }
+        };
+
+        // Verificação inicial de recompensas do passe
+        if (playerData.bpLevel >= 1 && !playerData.unlockedBirds.includes('zanholo')) {
+            playerData.unlockedBirds.push('zanholo');
         }
 
         function saveGame() {
-            localStorage.setItem('skyLordsSave', JSON.stringify(playerData));
+            localStorage.setItem('skyLordsSaveV3', JSON.stringify(playerData));
             const coinEl = document.getElementById('player-coins');
             if(coinEl) coinEl.innerText = playerData.coins;
         }
 
-        // --- DADOS DO JOGO (NOVOS PÁSSAROS E HABILIDADES) ---
-        const BIRD_STATS = {
-            eagle:       { name: "Águia Real",   hp: 110, mana: 120, speed: 0.8, turn: 0.9, color: 0xffaa00, price: 0,    desc: "Equilibrada. Habilidade: Empurrão Sônico.", abilityName: "Onda Sônica", abilityCD: 5, abilityType: 'push' },
-            falcon:      { name: "Falcão Veloz", hp: 80,  mana: 100, speed: 1.2, turn: 0.6, color: 0x3366ff, price: 300,  desc: "Mergulho supersônico. Habilidade: Turbo.", abilityName: "Turbo", abilityCD: 8, abilityType: 'dash' },
-            owl:         { name: "Coruja Sábia", hp: 130, mana: 150, speed: 0.6, turn: 1.1, color: 0xeeeeee, price: 500,  desc: "Silenciosa. Habilidade: Invisibilidade.", abilityName: "Furtividade", abilityCD: 10, abilityType: 'stealth' },
-            hummingbird: { name: "Beija-flor",   hp: 50,  mana: 200, speed: 0.9, turn: 1.5, color: 0x00ffcc, price: 800,  desc: "Difícil de acertar. Habilidade: Cura Rápida.", abilityName: "Néctar", abilityCD: 12, abilityType: 'heal' },
-            vulture:     { name: "Abutre",       hp: 160, mana: 80,  speed: 0.7, turn: 0.7, color: 0xaa4444, price: 600,  desc: "Tanque. Habilidade: Escudo de Ossos.", abilityName: "Escudo", abilityCD: 15, abilityType: 'shield' },
-            crow:        { name: "Corvo",        hp: 90,  mana: 140, speed: 0.85, turn: 1.2, color: 0x222222, price: 1000, desc: "Sombrio. Habilidade: Teleporte.", abilityName: "Blink", abilityCD: 6, abilityType: 'teleport' },
-            phoenix:     { name: "Fênix",        hp: 120, mana: 180, speed: 0.9, turn: 0.8, color: 0xff4500, price: 2500, desc: "Renascida. Habilidade: Explosão Solar.", abilityName: "Nova", abilityCD: 12, abilityType: 'nova' },
-            nagas:       { name: "Nagas",        hp: 300, mana: 300, speed: 1.0, turn: 1.0, color: 0x4b0082, price: 10000, desc: "LENDÁRIO. O terror dos céus. Habilidade: Buraco Negro.", abilityName: "Vazio", abilityCD: 20, abilityType: 'void' }
+        // Skins globais que podem ser aplicadas (se a lógica fosse complexa, seria por pássaro, aqui simplificamos para re-color)
+        const SKINS = {
+            default:   { name: "Padrão", price: 0, color: null }, // Null usa a cor base do pássaro
+            midnight:  { name: "Meia-Noite", price: 200, color: 0x111122 },
+            golden:    { name: "Dourado", price: 1000, color: 0xffd700 },
+            crimson:   { name: "Carmesim", price: 400, color: 0x990000 },
+            spectral:  { name: "Espectral", price: 800, color: 0xaaffff },
+            forest:    { name: "Camuflagem", price: 300, color: 0x2e4e2e },
+            neon:      { name: "Cyber Neon", price: 1500, color: 0xff00ff }
         };
 
         const MAP_TYPES = {
-            woods:  { ground: 0x1a2e1a, sky: 0x87CEEB, fog: 0x87CEEB, obstacle: 0x3e2723, type: 'woods' },
-            desert: { ground: 0x3d331f, sky: 0xffcc99, fog: 0xeebb99, obstacle: 0x6d4c41, type: 'desert' },
-            arctic: { ground: 0xf0f8ff, sky: 0xb0e0e6, fog: 0xcfe2f3, obstacle: 0x78909c, type: 'arctic' }
+            woods:  { ground: 0x1a2e1a, sky: 0x87CEEB, fog: 0x87CEEB, type: 'woods' },
+            desert: { ground: 0x3d331f, sky: 0xffcc99, fog: 0xeebb99, type: 'desert' },
+            arctic: { ground: 0xf0f8ff, sky: 0xb0e0e6, fog: 0xcfe2f3, type: 'arctic' }
         };
 
         // --- ENGINE GLOBALS ---
@@ -301,33 +396,38 @@
         let gameState = 'LOBBY'; 
         let world, player, bots = [], projectiles = [], nests = [];
         let selectedBirdKey = 'eagle';
+        let selectedSkinKey = 'default';
         let selectedMapKey = 'woods';
         let mouseX = 0, mouseY = 0;
         let killCount = 0;
         let sessionCoins = 0;
         
-        // Utilitários para raycasting e mira
         const raycaster = new THREE.Raycaster();
         const screenCenter = new THREE.Vector2(0, 0);
-
         const keys = { w: false, s: false, a: false, d: false, space: false, q: false };
         
-        // --- FACTORY (MODELOS 3D ATUALIZADOS) ---
+        // --- FACTORY (ATUALIZADA PARA SKINS) ---
         class BirdFactory {
-            static create(type) {
+            static create(type, skinKey = 'default') {
                 const group = new THREE.Group();
-                const color = BIRD_STATS[type].color;
+                const stats = BIRD_STATS[type];
+                const skin = SKINS[skinKey];
+                
+                // Cor final: Se a skin tiver cor definida, usa ela. Se não, usa a cor base da classe.
+                const finalColor = skin && skin.color !== null ? skin.color : stats.baseColor;
 
-                const matBody = new THREE.MeshStandardMaterial({ color: color, roughness: 0.6, flatShading: true });
+                const matBody = new THREE.MeshStandardMaterial({ color: finalColor, roughness: 0.6, flatShading: true });
                 const matSec = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8, flatShading: true });
                 const matBeak = new THREE.MeshStandardMaterial({ color: 0xffaa00, roughness: 0.4 });
                 const matWhite = new THREE.MeshStandardMaterial({ color: 0xffffff });
                 const matBlack = new THREE.MeshBasicMaterial({ color: 0x000000 });
-                const matGlow = new THREE.MeshBasicMaterial({ color: color }); // Para Fenix/Nagas
+                const matGlow = new THREE.MeshBasicMaterial({ color: finalColor }); 
+
+                // Material especial para o bico do Zanholo
+                const matBeakGreen = new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.4 });
 
                 let bodyGeo, wingGeo;
 
-                // Geometrias Especiais
                 if (type === 'hummingbird') {
                     bodyGeo = new THREE.ConeGeometry(0.3, 1, 8);
                     wingGeo = new THREE.BoxGeometry(0.8, 0.05, 0.3);
@@ -335,9 +435,12 @@
                     bodyGeo = new THREE.DodecahedronGeometry(0.8);
                     wingGeo = new THREE.BoxGeometry(2.5, 0.1, 1.2);
                 } else if (type === 'nagas') {
-                    // Nagas: Corpo longo serpentino
                     bodyGeo = new THREE.CylinderGeometry(0.4, 0.2, 4, 8);
                     wingGeo = new THREE.BoxGeometry(3, 0.1, 1.5);
+                } else if (type === 'zanholo') {
+                    // Corpo de tucano (um pouco mais alongado)
+                    bodyGeo = new THREE.CapsuleGeometry(0.4, 0.8, 4, 8);
+                    wingGeo = new THREE.BoxGeometry(2.2, 0.1, 0.9);
                 } else {
                     bodyGeo = new THREE.ConeGeometry(0.5, 2, 7);
                     wingGeo = new THREE.BoxGeometry(2, 0.1, 0.8);
@@ -356,9 +459,10 @@
                 headGroup.add(head);
                 
                 let headPosZ = 0.9;
-                if(type === 'nagas') headPosZ = 2.2; // Cabeça na frente do corpo longo
+                if(type === 'nagas') headPosZ = 2.2; 
                 else if(type === 'hummingbird') headPosZ = 0.4;
                 else if(type === 'vulture') headPosZ = 0.6;
+                else if(type === 'zanholo') headPosZ = 0.6; // Ajuste para o corpo de capsula
 
                 headGroup.position.set(0, 0.3, headPosZ);
                 group.add(headGroup);
@@ -370,17 +474,34 @@
                 pupilL.position.z = 0.08;
                 eyeL.add(scleraL, pupilL);
                 eyeL.position.set(0.2, 0.1, 0.2);
-                
                 const eyeR = eyeL.clone();
                 eyeR.position.set(-0.2, 0.1, 0.2);
                 headGroup.add(eyeL, eyeR);
 
                 // Bico
-                let beakLen = type === 'hummingbird' ? 1.0 : 0.5;
-                const beak = new THREE.Mesh(new THREE.ConeGeometry(0.08, beakLen, 4), matBeak);
-                beak.rotation.x = -Math.PI / 2;
-                beak.position.set(0, 0, 0.2 + beakLen/2);
-                headGroup.add(beak);
+                let beakMesh;
+                if (type === 'zanholo') {
+                    // Bico de Tucano Gigante
+                    const beakGeo = new THREE.BoxGeometry(0.2, 0.3, 1.2);
+                    // Afunilar a ponta do bico
+                    const pos = beakGeo.attributes.position;
+                    for(let i=0; i<pos.count; i++){
+                        if(pos.getZ(i) > 0.5) {
+                            pos.setX(i, pos.getX(i) * 0.2);
+                            pos.setY(i, pos.getY(i) * 0.2);
+                        }
+                    }
+                    beakGeo.computeVertexNormals();
+                    
+                    beakMesh = new THREE.Mesh(beakGeo, matBeakGreen);
+                    beakMesh.position.set(0, -0.1, 0.8); // Pra frente e um pouco pra baixo
+                } else {
+                    let beakLen = type === 'hummingbird' ? 1.0 : 0.5;
+                    beakMesh = new THREE.Mesh(new THREE.ConeGeometry(0.08, beakLen, 4), matBeak);
+                    beakMesh.rotation.x = -Math.PI / 2;
+                    beakMesh.position.set(0, 0, 0.2 + beakLen/2);
+                }
+                headGroup.add(beakMesh);
 
                 // Asas
                 const wings = [];
@@ -397,7 +518,6 @@
                 wingRGroup.position.set(-0.2, 0.2, 0.2);
 
                 if (type === 'nagas') {
-                    // Nagas tem asas mais atrás
                     wingLGroup.position.z = -0.5;
                     wingRGroup.position.z = -0.5;
                 }
@@ -405,17 +525,15 @@
                 group.add(wingLGroup, wingRGroup);
                 wings.push(wingLGroup, wingRGroup);
 
-                // Cauda
                 const tailG = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.6, 1, 3), matSec);
                 tailG.rotation.x = -Math.PI / 2;
                 tailG.position.set(0, 0, -1.2);
                 if (type === 'nagas') tailG.position.set(0, 0, -2.2);
+                else if (type === 'zanholo') tailG.position.set(0, 0, -0.8);
                 tailG.scale.z = 0.1; 
                 group.add(tailG);
 
-                // Efeitos Especiais Visuais
                 if (type === 'phoenix') {
-                    // Anel de fogo simples
                     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.05, 4, 8), matGlow);
                     ring.rotation.x = Math.PI/2;
                     group.add(ring);
@@ -425,13 +543,13 @@
             }
         }
 
-        // --- MUNDO & TERRENO ---
+        // --- GAME WORLD (COLISÃO MANTIDA) ---
         class GameWorld {
             constructor(mapKey) {
                 this.config = MAP_TYPES[mapKey];
                 this.stormRadius = 800;
                 this.maxRadius = 800;
-                this.noise = new ImprovedNoise(); // Instância única de ruído
+                this.noise = new ImprovedNoise();
                 
                 this.initEnvironment();
                 this.initTerrain();
@@ -442,10 +560,8 @@
             initEnvironment() {
                 scene.background = new THREE.Color(this.config.sky);
                 scene.fog = new THREE.FogExp2(this.config.fog, 0.0012);
-                
                 const hemi = new THREE.HemisphereLight(0xffffff, this.config.ground, 0.6);
                 scene.add(hemi);
-
                 const sun = new THREE.DirectionalLight(0xffffff, 1.2);
                 sun.position.set(300, 500, 100);
                 sun.castShadow = true;
@@ -457,37 +573,21 @@
                 scene.add(sun);
             }
 
-            // Função centralizada para calcular a altura do terreno
             getTerrainHeight(x, z) {
-                // Como o PlaneGeometry é girado -90 graus no eixo X:
-                // O Y local do plano corresponde ao -Z do mundo.
-                // Usamos as mesmas coordenadas de ruído da geração para consistência.
                 const y = -z; 
-                
                 let h = this.noise.noise(x*0.003, y*0.003, 0) * 80; 
                 h += this.noise.noise(x*0.01, y*0.01, 10) * 10;
-                
                 const dist = Math.sqrt(x*x + y*y);
                 if(dist > 900) h += (dist-900) * 0.8;
-                
                 return h;
             }
 
             initTerrain() {
                 const geo = new THREE.PlaneGeometry(2400, 2400, 128, 128);
                 const pos = geo.attributes.position;
-                
                 for(let i=0; i<pos.count; i++) {
                     const x = pos.getX(i);
                     const y = pos.getY(i); 
-                    
-                    // Usa a função centralizada para consistência (mas note que aqui passamos 'x' e '-y' 
-                    // pois 'y' do plano local será o '-z' do mundo quando rotacionado)
-                    // Para simplificar, usamos a lógica raw do noise aqui pra garantir que bata 100% com o getTerrainHeight
-                    // que recebe WorldCoords.
-                    // WorldX = x, WorldZ = -y.
-                    // getTerrainHeight(x, -y) -> usa -(-y) = y.
-                    
                     let z = this.getTerrainHeight(x, -y);
                     pos.setZ(i, z);
                 }
@@ -507,7 +607,6 @@
                 const cactusGeo = new THREE.CylinderGeometry(2, 2, 15, 6);
                 const rockGeo = new THREE.DodecahedronGeometry(5);
                 const iceSpikeGeo = new THREE.ConeGeometry(3, 25, 4);
-
                 const trunkMat = new THREE.MeshStandardMaterial({color: 0x5c4033, flatShading:true});
                 const leavesMat = new THREE.MeshStandardMaterial({color: 0x2e7d32, flatShading:true});
                 const cactusMat = new THREE.MeshStandardMaterial({color: 0x4caf50, flatShading:true});
@@ -521,8 +620,6 @@
                     const x = Math.cos(angle)*rad;
                     const z = Math.sin(angle)*rad;
                     let obs;
-                    
-                    // Obter altura do terreno para posicionar o objeto corretamente
                     const h = this.getTerrainHeight(x, z);
 
                     if (this.config.type === 'woods') {
@@ -533,7 +630,7 @@
                             const top = new THREE.Mesh(treeTopGeo, leavesMat);
                             top.position.y = 15;
                             obs.add(trunk, top);
-                            obs.position.y = -2; // Ajuste fino da base da árvore
+                            obs.position.y = -2; 
                         } else {
                             obs = new THREE.Mesh(rockGeo, rockMat);
                             obs.position.y = 3;
@@ -549,7 +646,6 @@
                     if(obs) {
                         obs.position.x = x; 
                         obs.position.z = z;
-                        // Ajustar a altura base do objeto com o terreno
                         obs.position.y += h; 
                         obs.castShadow = true; scene.add(obs);
                     }
@@ -560,9 +656,6 @@
                 nests = [];
                 const nestGeo = new THREE.TorusGeometry(8, 1, 8, 20);
                 const nestMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
-                const particleGeo = new THREE.SphereGeometry(0.5);
-                const particleMat = new THREE.MeshBasicMaterial({color: 0x00ff00});
-
                 for(let i=0; i<15; i++) {
                     const nest = new THREE.Mesh(nestGeo, nestMat);
                     const angle = Math.random() * Math.PI * 2;
@@ -570,7 +663,6 @@
                     const x = Math.cos(angle)*rad;
                     const z = Math.sin(angle)*rad;
                     const h = this.getTerrainHeight(x, z);
-                    
                     nest.position.set(x, h + 5, z);
                     nest.rotation.x = Math.PI/2;
                     scene.add(nest);
@@ -599,19 +691,17 @@
 
         // --- ENTIDADES ---
         class Entity {
-            constructor(type, isPlayer) {
+            constructor(type, isPlayer, skinKey = 'default') {
                 this.stats = {...BIRD_STATS[type]};
                 this.maxHp = this.stats.hp;
                 this.maxMana = this.stats.mana;
                 this.isPlayer = isPlayer;
                 this.dead = false;
-                
-                // Habilidades
                 this.abilityTimer = 0;
                 this.isStealthed = false;
                 this.isShielded = false;
 
-                const factory = BirdFactory.create(type);
+                const factory = BirdFactory.create(type, skinKey);
                 this.mesh = factory.mesh;
                 this.wings = factory.wings;
                 this.mesh.userData.entity = this;
@@ -623,18 +713,15 @@
                 if(!isPlayer) {
                     const ang = Math.random()*Math.PI*2;
                     const spawnRad = 80 + Math.random() * 700;
-                    this.position.set(Math.cos(ang)*spawnRad, 100, Math.sin(ang)*spawnRad); // Spawn mais alto
+                    this.position.set(Math.cos(ang)*spawnRad, 100, Math.sin(ang)*spawnRad);
                     this.rotation.set(0, Math.random() * Math.PI * 2, 0);
                 }
-                
                 this.velocity = new THREE.Vector3();
             }
 
             takeDamage(amt) {
                 if(this.dead) return;
-                
-                if(this.isShielded) amt *= 0.2; // 80% reduct
-                
+                if(this.isShielded) amt *= 0.2; 
                 this.stats.hp -= amt;
                 if(this.isPlayer) updateHUD();
                 if(this.stats.hp <= 0) this.die();
@@ -643,11 +730,10 @@
             die() {
                 this.dead = true;
                 this.mesh.visible = false;
-                
                 if(!this.isPlayer) {
                     if (this.lastHitter === player) {
                         killCount++;
-                        sessionCoins += 20; // Recompensa por abate
+                        sessionCoins += 20; 
                         document.getElementById('kill-count').innerText = killCount;
                         document.getElementById('session-coins').innerText = sessionCoins;
                     }
@@ -664,32 +750,23 @@
                 const projMat = new THREE.MeshBasicMaterial({color: this.isPlayer ? 0x00ffff : 0xff3300});
                 const mesh = new THREE.Mesh(projGeo, projMat);
                 
-                // Ponto de saída do tiro (bico/cabeça)
                 const muzzleOffset = new THREE.Vector3(0, 0, 1.5).applyEuler(this.rotation);
                 mesh.position.copy(this.mesh.position).add(muzzleOffset);
                 
                 let dir;
 
                 if (this.isPlayer) {
-                    // MIRA MELHORADA: Raycasting do centro da tela para o mundo
-                    // Isso garante que o tiro vá EXATAMENTE onde a mira (crosshair) está
                     raycaster.setFromCamera(screenCenter, camera);
-                    
-                    // Definir um ponto alvo distante na direção da câmera
                     const targetPoint = new THREE.Vector3();
-                    raycaster.ray.at(500, targetPoint); // Mira 500 unidades a frente
-
-                    // Vetor do pássaro até o ponto de mira
+                    raycaster.ray.at(500, targetPoint); 
                     dir = new THREE.Vector3().subVectors(targetPoint, mesh.position).normalize();
                 } else {
-                    // IA MIRA: Usa a direção passada ou frente, com imprecisão
                     if (forcedDir) {
                         dir = forcedDir.normalize();
                     } else {
                         dir = new THREE.Vector3(0,0,1).applyEuler(this.rotation).normalize();
                     }
                 }
-                
                 projectiles.push({ mesh, dir, owner: this, life: 3, damage: 35 });
                 scene.add(mesh);
             }
@@ -697,19 +774,16 @@
             triggerAbility() {
                 if (this.abilityTimer > 0) return;
                 this.abilityTimer = this.stats.abilityCD;
-
-                // Lógica de cada habilidade
                 const type = this.stats.abilityType;
                 
                 if (type === 'push') {
-                    // Onda Sônica (Repelir próximos)
                     const entities = [player, ...bots];
                     for(let e of entities) {
                         if (e === this || e.dead) continue;
                         const d = this.position.distanceTo(e.position);
                         if (d < 50) {
                             const pushDir = new THREE.Vector3().subVectors(e.position, this.position).normalize();
-                            e.velocity.addScaledVector(pushDir, 100); // Empurrão
+                            e.velocity.addScaledVector(pushDir, 100); 
                         }
                     }
                 } else if (type === 'dash') {
@@ -717,13 +791,12 @@
                     this.velocity.addScaledVector(forward, 150);
                 } else if (type === 'stealth') {
                     this.isStealthed = true;
-                    this.mesh.visible = false; // Simples
+                    this.mesh.visible = false; 
                     setTimeout(() => { this.isStealthed = false; if(!this.dead) this.mesh.visible = true; }, 3000);
                 } else if (type === 'heal') {
                     this.stats.hp = Math.min(this.maxHp, this.stats.hp + 50);
                 } else if (type === 'shield') {
                     this.isShielded = true;
-                    // Visual
                     const s = new THREE.Mesh(new THREE.SphereGeometry(3), new THREE.MeshBasicMaterial({color:0xff0000, wireframe:true, transparent:true, opacity:0.5}));
                     this.mesh.add(s);
                     setTimeout(() => { this.isShielded = false; this.mesh.remove(s); }, 5000);
@@ -731,7 +804,6 @@
                     const forward = new THREE.Vector3(0,0,1).applyEuler(this.rotation);
                     this.position.addScaledVector(forward, 80);
                 } else if (type === 'nova') {
-                    // Explosão
                     const entities = [player, ...bots];
                     for(let e of entities) {
                         if (e === this || e.dead) continue;
@@ -740,7 +812,6 @@
                         }
                     }
                 } else if (type === 'void') {
-                    // Buraco Negro (Puxar todos)
                     const entities = [player, ...bots];
                     for(let e of entities) {
                         if (e === this || e.dead) continue;
@@ -754,11 +825,9 @@
             }
 
             checkNests(dt) {
-                // Recuperação em Ninhos
                 for(let nest of nests) {
                     const distXZ = new THREE.Vector2(this.position.x - nest.position.x, this.position.z - nest.position.z).length();
                     const distY = Math.abs(this.position.y - nest.position.y);
-                    
                     if (distXZ < 10 && distY < 15) {
                         this.stats.hp = Math.min(this.maxHp, this.stats.hp + 20 * dt);
                         this.stats.mana = Math.min(this.maxMana, this.stats.mana + 30 * dt);
@@ -769,8 +838,8 @@
         }
 
         class PlayerController extends Entity {
-            constructor(type) {
-                super(type, true);
+            constructor(type, skin) {
+                super(type, true, skin);
                 this.cameraPivot = new THREE.Object3D();
                 scene.add(this.cameraPivot);
                 this.pitch = 0; this.yaw = 0;
@@ -780,11 +849,8 @@
             update(dt) {
                 if(this.dead) return;
                 
-                // Habilidade Input
                 if (this.abilityTimer > 0) this.abilityTimer -= dt;
-                if (keys.q && this.abilityTimer <= 0) {
-                    this.triggerAbility();
-                }
+                if (keys.q && this.abilityTimer <= 0) this.triggerAbility();
 
                 this.mesh.position.copy(this.position);
                 this.mesh.rotation.copy(this.rotation);
@@ -819,16 +885,14 @@
                 const desiredVel = forward.multiplyScalar(acceleration);
                 this.velocity.lerp(desiredVel, 2 * dt);
 
-                // --- COLISÃO COM TERRENO MELHORADA ---
                 if (world) {
                     const terrainH = world.getTerrainHeight(this.position.x, this.position.z);
-                    const safeH = terrainH + 5; // Altura segura acima do terreno (raio do pássaro + margem)
-                    
+                    const safeH = terrainH + 5; 
                     if(this.position.y < safeH) {
                         this.position.y = safeH;
                         this.velocity.y = Math.max(0, this.velocity.y);
                     }
-                } else if(this.position.y < 5) { // Fallback
+                } else if(this.position.y < 5) {
                     this.position.y = 5;
                     this.velocity.y = Math.max(0, this.velocity.y);
                 }
@@ -864,7 +928,8 @@
 
         class BotAI extends Entity {
             constructor(type) {
-                super(type, false);
+                // Bots usam skin padrão ou aleatória? Padrão por enquanto
+                super(type, false, 'default');
                 this.state = 'WANDER';
                 this.targetPoint = new THREE.Vector3();
                 this.attackCooldown = 0;
@@ -872,10 +937,8 @@
             }
 
             changeTarget() {
-                // IA MELHORADA: Movimentação mais dinâmica
                 const r = world.stormRadius * 0.9;
                 const a = Math.random() * 6.28;
-                // Varia mais a altura para ocupar melhor o mapa
                 this.targetPoint.set(Math.cos(a)*r, 10 + Math.random() * (MAX_FLIGHT_HEIGHT - 20), Math.sin(a)*r);
             }
 
@@ -908,29 +971,22 @@
                         const lookDir = new THREE.Vector3().subVectors(closest.position, this.position).normalize();
                         const myDir = new THREE.Vector3(0,0,1).applyEuler(this.rotation);
                         
-                        if (lookDir.dot(myDir) > 0.7) { // Ângulo um pouco mais aberto para atirar
-                            // IA MIRA HUMANIZADA (MIRA RUIM)
-                            // Calcula direção correta
+                        if (lookDir.dot(myDir) > 0.7) { 
                             const aimDir = new THREE.Vector3().subVectors(closest.position, this.position).normalize();
-                            
-                            // Adiciona erro (jitter/spread)
-                            const inaccuracy = 0.15; // Fator de erro
+                            const inaccuracy = 0.15; 
                             aimDir.x += (Math.random() - 0.5) * inaccuracy;
                             aimDir.y += (Math.random() - 0.5) * inaccuracy;
                             aimDir.z += (Math.random() - 0.5) * inaccuracy;
-                            
                             this.fire(aimDir);
                             this.attackCooldown = 0.5 + Math.random() * 0.8; 
                         }
                     }
 
-                    // Bot usa Habilidade
                     if (minDst < 80 && this.abilityTimer <= 0) {
                         if (Math.random() > 0.5) this.triggerAbility();
                     }
                 } else {
                     const distToPoint = new THREE.Vector2(this.position.x - this.targetPoint.x, this.position.z - this.targetPoint.z).length();
-                    // Muda de alvo mais cedo se estiver perto ou aleatoriamente para parecer mais vivo
                     if(distToPoint < 30 || Math.random() < 0.005) this.changeTarget();
                 }
 
@@ -949,15 +1005,12 @@
                 const forward = new THREE.Vector3(0,0,1).applyEuler(this.rotation);
                 this.position.addScaledVector(forward, this.stats.speed * speedMult * dt);
 
-                // --- COLISÃO COM TERRENO NA IA ---
                 if (world) {
                     const terrainH = world.getTerrainHeight(this.position.x, this.position.z);
-                    const safeH = terrainH + 8; // IA voa um pouco mais alto
-                    
+                    const safeH = terrainH + 8; 
                     if (this.position.y < safeH) {
                         this.position.y = safeH;
                         this.rotation.x = Math.max(0.2, this.rotation.x); 
-                        // Força IA a subir o alvo se colidir
                         this.targetPoint.y = Math.max(this.targetPoint.y, safeH + 20); 
                     }
                 }
@@ -986,17 +1039,12 @@
 
         // --- SISTEMAS GERAIS ---
         function updateProjectiles(dt) {
-            // COLISÃO MELHORADA: Raio de acerto maior
-            const HIT_RADIUS_PLAYER = 4.5; // Maior para facilitar acertar players/bots
-            const HIT_RADIUS_PROJ = 2;
-
+            const HIT_RADIUS_PLAYER = 4.5;
             for(let i = projectiles.length-1; i>=0; i--) {
                 const p = projectiles[i];
                 p.life -= dt;
-                // Velocidade do projétil aumentada para parecer mais direto
                 p.mesh.position.addScaledVector(p.dir, 220 * dt); 
 
-                // Colisão do projétil com o terreno (opcional, mas legal para realismo)
                 const terrainH = world.getTerrainHeight(p.mesh.position.x, p.mesh.position.z);
                 if (p.mesh.position.y < terrainH) {
                     scene.remove(p.mesh);
@@ -1021,7 +1069,6 @@
                         break;
                     }
                 }
-
                 if (hit || p.life <= 0) {
                     scene.remove(p.mesh);
                     projectiles.splice(i, 1);
@@ -1036,7 +1083,6 @@
             document.getElementById('mana-val').innerText = Math.floor(player.stats.mana);
             document.getElementById('mana-bar').style.width = Math.max(0, (player.stats.mana / player.maxMana)*100) + '%';
             
-            // Ability HUD
             const abBox = document.getElementById('ability-cooldown');
             if (player.abilityTimer > 0) {
                 abBox.innerText = Math.ceil(player.abilityTimer) + "s";
@@ -1064,6 +1110,17 @@
             
             if (playerData) {
                 playerData.coins += sessionCoins;
+                playerData.bpExp += 20; // XP do passe
+                if (playerData.bpExp >= 100) {
+                    playerData.bpExp = 0;
+                    playerData.bpLevel++;
+                }
+                
+                // Verificar se desbloqueou Zanholo ao subir de nível
+                if (playerData.bpLevel >= 1 && !playerData.unlockedBirds.includes('zanholo')) {
+                    playerData.unlockedBirds.push('zanholo');
+                }
+                
                 saveGame();
             }
 
@@ -1073,59 +1130,183 @@
             document.getElementById('go-msg').innerText = victory ? "Vitória Royale!" : "Tente novamente.";
         }
 
-        // --- SISTEMA DE RETORNO AO LOBBY ---
         window.returnToLobby = function() {
             gameState = 'LOBBY';
             document.getElementById('game-over-screen').style.display = 'none';
             document.getElementById('game-ui').style.display = 'none';
             document.getElementById('lobby-ui').style.display = 'flex';
-            
-            // Resetar tudo
             initLobby();
         };
 
-        // --- LOBBY LOGIC (ATUALIZADO PARA LOJA E VISUAL 3D) ---
+        // --- LOBBY LOGIC (ATUALIZADO) ---
         let lobbyBird;
         let lobbyParticles;
 
+        window.switchTab = function(tab) {
+            // UI
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('page-'+tab).classList.add('active');
+
+            // Lógica
+            if(tab === 'pass') {
+                renderPass();
+            } else if (tab === 'locker') {
+                renderLocker();
+            }
+        }
+
+        function renderPass() {
+            const track = document.getElementById('pass-track-list');
+            track.innerHTML = '';
+            
+            for(let i=1; i<=10; i++) {
+                const claimed = i < playerData.bpLevel;
+                const locked = i > playerData.bpLevel;
+                const current = i === playerData.bpLevel;
+                
+                const isZanholo = (i === 1);
+                let rewardIcon = '💰';
+                let rewardLabel = '100 MOEDAS';
+                
+                if (isZanholo) {
+                    rewardIcon = '🦜';
+                    rewardLabel = 'ZANHOLO (PÁSSARO)';
+                } else if (i === 10) {
+                    rewardIcon = '👑';
+                    rewardLabel = 'SKIN LENDÁRIA';
+                } else if (i % 2 === 0) {
+                    rewardIcon = '🎨';
+                    rewardLabel = 'SKIN RARA';
+                }
+
+                const tier = document.createElement('div');
+                tier.className = `pass-tier ${claimed ? 'claimed' : ''} ${locked ? 'locked' : ''}`;
+                tier.innerHTML = `
+                    <div class="tier-num">${i}</div>
+                    <div class="tier-reward">${rewardIcon}</div>
+                    <div class="tier-label">${rewardLabel}</div>
+                    ${current ? '<div style="margin-top:auto; font-size:10px; color:#0f0">ATUAL</div>' : ''}
+                `;
+                track.appendChild(tier);
+            }
+            document.getElementById('bp-level').innerText = playerData.bpLevel;
+        }
+
+        function renderLocker() {
+            // Lista de Pássaros (Classes)
+            const listB = document.getElementById('locker-bird-list');
+            listB.innerHTML = '';
+            
+            for(let key in BIRD_STATS) {
+                const b = BIRD_STATS[key];
+                const unlocked = playerData.unlockedBirds.includes(key);
+                
+                const div = document.createElement('div');
+                div.className = 'bird-card' + (key === selectedBirdKey ? ' active' : '') + (!unlocked ? ' locked' : '');
+                
+                let buttonHtml = '';
+                if (!unlocked) {
+                    // Se for Zanholo, mostrar que é do passe
+                    if (key === 'zanholo') {
+                        buttonHtml = '<span style="font-size:10px;color:#ffcc00">NO PASSE</span>';
+                    } else {
+                        buttonHtml = `<button class="price-btn" onclick="buyBird('${key}', ${b.price})">💰 ${b.price}</button>`;
+                    }
+                } else {
+                    buttonHtml = '<span style="font-size:10px;color:#0f0">ADQUIRIDO</span>';
+                }
+
+                div.innerHTML = `
+                    <div>
+                        <div style="font-weight:bold; font-size:16px">${b.name}</div>
+                        ${buttonHtml}
+                    </div>
+                    <div class="bird-icon" style="background:${'#'+b.baseColor.toString(16)}">${key[0].toUpperCase()}</div>
+                `;
+                div.onclick = (e) => { if(e.target.tagName !== 'BUTTON') selectBird(key); };
+                listB.appendChild(div);
+            }
+
+            // Lista de Skins
+            const listS = document.getElementById('locker-skin-list');
+            listS.innerHTML = '';
+
+            for(let key in SKINS) {
+                const s = SKINS[key];
+                const unlocked = playerData.unlockedSkins.includes(key);
+
+                const div = document.createElement('div');
+                div.className = 'skin-card' + (key === selectedSkinKey ? ' active' : '') + (!unlocked ? ' locked' : '');
+                div.innerHTML = `
+                    <div>
+                        <div style="font-weight:bold; font-size:16px">${s.name}</div>
+                        ${!unlocked ? `<button class="price-btn" onclick="buySkin('${key}', ${s.price})">💰 ${s.price}</button>` : '<span style="font-size:10px;color:#0f0">ADQUIRIDO</span>'}
+                    </div>
+                    <div class="bird-icon" style="background:${s.color ? '#'+s.color.toString(16) : '#fff'}"></div>
+                `;
+                div.onclick = (e) => { if(e.target.tagName !== 'BUTTON') selectSkin(key); };
+                listS.appendChild(div);
+            }
+
+            const statsPanel = document.getElementById('skin-stats-panel');
+            const s = BIRD_STATS[selectedBirdKey];
+            statsPanel.innerHTML = `
+                <div style="font-size:12px; color:#aaa">CLASSE SELECIONADA</div>
+                <h3 style="margin:0 0 10px 0; color:${'#'+s.baseColor.toString(16)}">${s.name}</h3>
+                <p style="font-size:12px; color:#ccc">${s.desc}</p>
+                <div style="margin-top:5px;">HABILIDADE: <b style="color:#ffcc00">${s.abilityName}</b></div>
+            `;
+        }
+
+        window.buyBird = (key, price) => {
+            if(playerData.coins >= price) {
+                playerData.coins -= price;
+                playerData.unlockedBirds.push(key);
+                saveGame();
+                renderLocker();
+                updateLobbyBird();
+                document.getElementById('player-coins').innerText = playerData.coins;
+            }
+        }
+
+        window.buySkin = (key, price) => {
+            if(playerData.coins >= price) {
+                playerData.coins -= price;
+                playerData.unlockedSkins.push(key);
+                saveGame();
+                renderLocker();
+                document.getElementById('player-coins').innerText = playerData.coins;
+            }
+        }
+
         function initLobby() {
-            // Configuração do Cenário 3D do Lobby
-            scene.background = new THREE.Color(0x0f0f1a); // Azul noturno profundo
+            scene.background = new THREE.Color(0x0f0f1a);
             scene.fog = new THREE.FogExp2(0x0f0f1a, 0.02);
             scene.clear();
             
-            // 1. Iluminação de Estúdio Dramática
-            const ambient = new THREE.AmbientLight(0x404040, 0.6); // Base escura
+            const ambient = new THREE.AmbientLight(0x404040, 0.6);
             scene.add(ambient);
-
-            const keyLight = new THREE.SpotLight(0xffeebb, 50); // Luz principal quente
+            const keyLight = new THREE.SpotLight(0xffeebb, 50);
             keyLight.position.set(5, 8, 5);
             keyLight.castShadow = true;
-            keyLight.shadow.mapSize.width = 1024;
-            keyLight.shadow.mapSize.height = 1024;
             scene.add(keyLight);
-
-            const rimLight = new THREE.SpotLight(0x00ccff, 30); // Luz de recorte azulada (Costas)
+            const rimLight = new THREE.SpotLight(0x00ccff, 30);
             rimLight.position.set(-5, 5, -5);
             scene.add(rimLight);
-
-            const fillLight = new THREE.PointLight(0xaa00ff, 10); // Luz de preenchimento roxa (Baixo)
+            const fillLight = new THREE.PointLight(0xaa00ff, 10);
             fillLight.position.set(0, -2, 3);
             scene.add(fillLight);
 
-            // 2. Pedestal Futurista
             const pedestalGeo = new THREE.CylinderGeometry(2.5, 2.8, 0.5, 64);
-            const pedestalMat = new THREE.MeshStandardMaterial({ 
-                color: 0x111111, 
-                roughness: 0.2, 
-                metalness: 0.8 
-            });
+            const pedestalMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2, metalness: 0.8 });
             const pedestal = new THREE.Mesh(pedestalGeo, pedestalMat);
             pedestal.position.y = -2;
             pedestal.receiveShadow = true;
             scene.add(pedestal);
 
-            // Anel de Neon no Pedestal
             const ringGeo = new THREE.TorusGeometry(2.6, 0.05, 16, 100);
             const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ccff });
             const ring = new THREE.Mesh(ringGeo, ringMat);
@@ -1133,64 +1314,36 @@
             ring.position.y = -1.8;
             scene.add(ring);
 
-            // 3. Partículas Flutuantes
             const particleGeo = new THREE.BufferGeometry();
             const particleCount = 200;
             const posArray = new Float32Array(particleCount * 3);
             for(let i = 0; i < particleCount * 3; i++) {
-                posArray[i] = (Math.random() - 0.5) * 15; // Espalhar em volta
+                posArray[i] = (Math.random() - 0.5) * 15;
             }
             particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-            const particleMat = new THREE.PointsMaterial({
-                size: 0.05,
-                color: 0xffffff,
-                transparent: true,
-                opacity: 0.6,
-                blending: THREE.AdditiveBlending
-            });
+            const particleMat = new THREE.PointsMaterial({ size: 0.05, color: 0xffffff, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending });
             lobbyParticles = new THREE.Points(particleGeo, particleMat);
             scene.add(lobbyParticles);
 
-            // Posicionar câmera para o Lobby
             camera.position.set(0, 1, 6);
             camera.lookAt(0, 0, 0);
 
-            // UI Updates
             document.getElementById('player-coins').innerText = playerData.coins;
-
-            const list = document.getElementById('bird-list');
-            list.innerHTML = '';
-            
-            for(let key in BIRD_STATS) {
-                const b = BIRD_STATS[key];
-                const unlocked = playerData.unlocked.includes(key);
-                
-                const div = document.createElement('div');
-                div.className = 'bird-card' + (key === selectedBirdKey ? ' active' : '') + (!unlocked ? ' locked' : '');
-                div.innerHTML = `
-                    <div>
-                        <div style="font-weight:bold; font-size:18px">${b.name}</div>
-                        <div class="price-tag">${unlocked ? "DESBLOQUEADO" : "💰 " + b.price}</div>
-                    </div>
-                    <div class="bird-icon" style="background:${'#'+b.color.toString(16)}">${key[0].toUpperCase()}</div>
-                `;
-                div.onclick = () => selectBird(key);
-                list.appendChild(div);
-            }
-
             updateLobbyBird();
         }
 
         window.selectBird = (key) => {
+            if(!playerData.unlockedBirds.includes(key)) return; // Só seleciona se tiver
             selectedBirdKey = key;
+            renderLocker(); // Atualiza UI
             updateLobbyBird();
-            
-            const cards = document.querySelectorAll('.bird-card');
-            cards.forEach((c, idx) => {
-                const k = Object.keys(BIRD_STATS)[idx];
-                c.classList.remove('active');
-                if(k === key) c.classList.add('active');
-            });
+        };
+
+        window.selectSkin = (key) => {
+            if(!playerData.unlockedSkins.includes(key)) return;
+            selectedSkinKey = key;
+            renderLocker(); // Atualiza UI
+            updateLobbyBird();
         };
 
         window.selectMap = (key) => {
@@ -1201,63 +1354,29 @@
 
         function updateLobbyBird() {
             if(lobbyBird) scene.remove(lobbyBird);
-            const factory = BirdFactory.create(selectedBirdKey);
+            const factory = BirdFactory.create(selectedBirdKey, selectedSkinKey);
             lobbyBird = factory.mesh;
-            
-            // Posicionar o pássaro flutuando sobre o pedestal
             lobbyBird.position.set(0, -0.5, 0);
-            lobbyBird.scale.set(1.3, 1.3, 1.3); // Levemente maior para destaque
-            
+            lobbyBird.scale.set(1.3, 1.3, 1.3);
             scene.add(lobbyBird);
             
-            const s = BIRD_STATS[selectedBirdKey];
-            const unlocked = playerData.unlocked.includes(selectedBirdKey);
+            const unlocked = playerData.unlockedBirds.includes(selectedBirdKey);
             const startBtn = document.getElementById('start-btn');
-            const panel = document.getElementById('stats-display');
-
-            if (unlocked) {
-                startBtn.innerText = "JOGAR";
-                startBtn.disabled = false;
-                startBtn.onclick = startGame;
-            } else {
-                if (playerData.coins >= s.price) {
-                    startBtn.innerText = `COMPRAR (${s.price})`;
-                    startBtn.disabled = false;
-                    startBtn.onclick = () => {
-                        playerData.coins -= s.price;
-                        playerData.unlocked.push(selectedBirdKey);
-                        saveGame();
-                        initLobby(); 
-                    };
-                } else {
-                    startBtn.innerText = "MOEDAS INSUFICIENTES";
-                    startBtn.disabled = true;
-                }
-            }
-
-            panel.innerHTML = `
-                <h3 style="margin:0 0 10px 0; color:${'#'+s.color.toString(16)}">${s.name}</h3>
-                <p style="font-size:12px; color:#ccc">${s.desc}</p>
-                
-                <div style="margin-top:10px; padding:5px; background:rgba(255,255,255,0.1); border-radius:5px;">
-                    <div style="font-size:10px; color:#aaa">HABILIDADE ESPECIAL</div>
-                    <div style="font-weight:bold; color:#ffcc00">${s.abilityName}</div>
-                </div>
-
-                <div style="font-size:14px; margin-bottom:5px; margin-top:10px">VELOCIDADE</div>
-                <div class="bar-container"><div class="bar-fill" style="width:${s.speed*80}%; background:#fff"></div></div>
-                <div style="font-size:14px; margin-bottom:5px">VIDA</div>
-                <div class="bar-container"><div class="bar-fill" style="width:${(s.hp/300)*100}%; background:#f33"></div></div>
-                <div style="font-size:14px; margin-bottom:5px">MANA</div>
-                <div class="bar-container"><div class="bar-fill" style="width:${(s.mana/300)*100}%; background:#0cf"></div></div>
-            `;
             
-            // Set correct ability name in HUD
-            document.getElementById('ability-name').innerText = s.abilityName;
+            if(unlocked) {
+                startBtn.disabled = false;
+                startBtn.innerText = "JOGAR";
+                startBtn.style.filter = "none";
+            } else {
+                startBtn.disabled = true;
+                startBtn.innerText = "BLOQUEADO";
+                startBtn.style.filter = "grayscale(1)";
+            }
         }
 
-        // --- MAIN GAME ---
-        function startGame() {
+        window.startGame = function() {
+            if(!playerData.unlockedBirds.includes(selectedBirdKey)) return;
+
             gameState = 'GAME';
             sessionCoins = 0; 
             killCount = 0; 
@@ -1273,11 +1392,10 @@
             scene.clear();
             
             world = new GameWorld(selectedMapKey);
-            player = new PlayerController(selectedBirdKey);
+            player = new PlayerController(selectedBirdKey, selectedSkinKey);
             
             const types = Object.keys(BIRD_STATS);
             for(let i=0; i<49; i++) {
-                // Bots não podem ser Nagas (muito OP para 49 bots)
                 let type = types[i % types.length];
                 if(type === 'nagas') type = 'eagle';
                 bots.push(new BotAI(type));
@@ -1321,17 +1439,12 @@
 
             if (gameState === 'LOBBY') {
                 if(lobbyBird) {
-                    // Rotação suave de apresentação
                     lobbyBird.rotation.y += 0.5 * dt;
-                    // Efeito de levitação
                     lobbyBird.position.y = -0.5 + Math.sin(clock.elapsedTime * 1.5) * 0.15;
                 }
-                
-                // Animar partículas do lobby
                 if(lobbyParticles) {
                     lobbyParticles.rotation.y += 0.05 * dt;
                 }
-
                 renderer.render(scene, camera);
             } 
             else if (gameState === 'GAME') {
