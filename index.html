@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Avian Arcana: Sky Lords (Zanholo Update)</title>
+    <title>Avian Arcana: Sky Lords (Zanholo Remodel)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@500;700&display=swap');
 
@@ -438,9 +438,10 @@
                     bodyGeo = new THREE.CylinderGeometry(0.4, 0.2, 4, 8);
                     wingGeo = new THREE.BoxGeometry(3, 0.1, 1.5);
                 } else if (type === 'zanholo') {
-                    // Corpo de tucano (um pouco mais alongado)
-                    bodyGeo = new THREE.CapsuleGeometry(0.4, 0.8, 4, 8);
-                    wingGeo = new THREE.BoxGeometry(2.2, 0.1, 0.9);
+                    // Corpo robusto de tucano (Cápsula)
+                    bodyGeo = new THREE.CapsuleGeometry(0.45, 0.9, 4, 8);
+                    // Asas mais proporcionais
+                    wingGeo = new THREE.BoxGeometry(2.2, 0.1, 1.0);
                 } else {
                     bodyGeo = new THREE.ConeGeometry(0.5, 2, 7);
                     wingGeo = new THREE.BoxGeometry(2, 0.1, 0.8);
@@ -467,34 +468,66 @@
                 headGroup.position.set(0, 0.3, headPosZ);
                 group.add(headGroup);
 
-                // Olhos
+                // Olhos e Máscara
                 const eyeL = new THREE.Group();
+                
+                // Máscara branca ao redor do olho (típico de tucano)
+                if (type === 'zanholo') {
+                    const mask = new THREE.Mesh(new THREE.CircleGeometry(0.18, 12), matWhite);
+                    mask.rotation.y = -Math.PI / 2; // Virado para a lateral
+                    mask.position.x = -0.01; // Levemente para fora do olho
+                    eyeL.add(mask);
+                }
+
                 const scleraL = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 6), matWhite);
                 const pupilL = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), (type === 'nagas') ? matGlow : matBlack);
                 pupilL.position.z = 0.08;
                 eyeL.add(scleraL, pupilL);
                 eyeL.position.set(0.2, 0.1, 0.2);
+                
                 const eyeR = eyeL.clone();
+                // Espelhar a máscara se for Zanholo
+                if (type === 'zanholo') {
+                    eyeR.children[0].rotation.y = Math.PI / 2;
+                }
                 eyeR.position.set(-0.2, 0.1, 0.2);
+                
                 headGroup.add(eyeL, eyeR);
 
                 // Bico
                 let beakMesh;
                 if (type === 'zanholo') {
-                    // Bico de Tucano Gigante
-                    const beakGeo = new THREE.BoxGeometry(0.2, 0.3, 1.2);
-                    // Afunilar a ponta do bico
+                    // Bico de Tucano Gigante e Curvo
+                    // Usamos BoxGeometry com manipulação de vértices para criar a curva
+                    const beakGeo = new THREE.BoxGeometry(0.25, 0.5, 1.5);
                     const pos = beakGeo.attributes.position;
+                    
+                    // Manipulação manual dos vértices para criar a forma de "banana"
                     for(let i=0; i<pos.count; i++){
-                        if(pos.getZ(i) > 0.5) {
-                            pos.setX(i, pos.getX(i) * 0.2);
-                            pos.setY(i, pos.getY(i) * 0.2);
+                        const z = pos.getZ(i);
+                        const y = pos.getY(i);
+                        const x = pos.getX(i);
+
+                        // Se é a parte da frente (ponta do bico)
+                        if (z > 0.5) {
+                            // Afunilar (taper)
+                            pos.setX(i, x * 0.2); 
+                            
+                            // Curvar para baixo
+                            pos.setY(i, y * 0.3 - 0.4); 
+                        } 
+                        // Parte do meio
+                        else if (z > -0.5) {
+                            // Curva suave superior
+                            if (y > 0) {
+                                pos.setY(i, y + (z * 0.1)); // Arqueia um pouco o topo
+                            }
                         }
                     }
                     beakGeo.computeVertexNormals();
                     
                     beakMesh = new THREE.Mesh(beakGeo, matBeakGreen);
-                    beakMesh.position.set(0, -0.1, 0.8); // Pra frente e um pouco pra baixo
+                    beakMesh.position.set(0, -0.1, 0.9); // Pra frente
                 } else {
                     let beakLen = type === 'hummingbird' ? 1.0 : 0.5;
                     beakMesh = new THREE.Mesh(new THREE.ConeGeometry(0.08, beakLen, 4), matBeak);
@@ -525,12 +558,29 @@
                 group.add(wingLGroup, wingRGroup);
                 wings.push(wingLGroup, wingRGroup);
 
-                const tailG = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.6, 1, 3), matSec);
-                tailG.rotation.x = -Math.PI / 2;
+                // Cauda
+                let tailGeo;
+                if (type === 'zanholo') {
+                    // Cauda de tucano (longa e retangular)
+                    tailGeo = new THREE.BoxGeometry(0.6, 0.1, 1.2);
+                } else {
+                    tailGeo = new THREE.CylinderGeometry(0.1, 0.6, 1, 3);
+                }
+
+                const tailG = new THREE.Mesh(tailGeo, matSec);
+                
+                if (type !== 'zanholo') {
+                    tailG.rotation.x = -Math.PI / 2;
+                    tailG.scale.z = 0.1;
+                }
+                
                 tailG.position.set(0, 0, -1.2);
+                
                 if (type === 'nagas') tailG.position.set(0, 0, -2.2);
-                else if (type === 'zanholo') tailG.position.set(0, 0, -0.8);
-                tailG.scale.z = 0.1; 
+                else if (type === 'zanholo') {
+                    tailG.position.set(0, 0, -0.9); // Ajuste da cauda do tucano
+                }
+                
                 group.add(tailG);
 
                 if (type === 'phoenix') {
@@ -607,11 +657,18 @@
                 const cactusGeo = new THREE.CylinderGeometry(2, 2, 15, 6);
                 const rockGeo = new THREE.DodecahedronGeometry(5);
                 const iceSpikeGeo = new THREE.ConeGeometry(3, 25, 4);
+                
                 const trunkMat = new THREE.MeshStandardMaterial({color: 0x5c4033, flatShading:true});
                 const leavesMat = new THREE.MeshStandardMaterial({color: 0x2e7d32, flatShading:true});
                 const cactusMat = new THREE.MeshStandardMaterial({color: 0x4caf50, flatShading:true});
                 const rockMat = new THREE.MeshStandardMaterial({color: 0x757575, flatShading:true});
                 const iceMat = new THREE.MeshStandardMaterial({color: 0xe1f5fe, flatShading:true, transparent:true, opacity:0.9});
+                
+                // Estruturas
+                const woodMat = new THREE.MeshStandardMaterial({color: 0x8b4513, flatShading:true});
+                const roofMat = new THREE.MeshStandardMaterial({color: 0x5d4037, flatShading:true});
+                const sandMat = new THREE.MeshStandardMaterial({color: 0xe6ddc0, flatShading:true});
+                const snowMat = new THREE.MeshStandardMaterial({color: 0xffffff, flatShading:true});
 
                 for(let i=0; i<count; i++) {
                     const angle = Math.random() * Math.PI * 2;
@@ -622,32 +679,71 @@
                     let obs;
                     const h = this.getTerrainHeight(x, z);
 
-                    if (this.config.type === 'woods') {
-                        if(Math.random() > 0.2) {
-                            obs = new THREE.Group();
-                            const trunk = new THREE.Mesh(treeTrunkGeo, trunkMat);
-                            trunk.position.y = 5;
-                            const top = new THREE.Mesh(treeTopGeo, leavesMat);
-                            top.position.y = 15;
-                            obs.add(trunk, top);
-                            obs.position.y = -2; 
+                    // Chance de 4% de ser uma estrutura
+                    if (Math.random() < 0.04) {
+                        obs = new THREE.Group();
+                        if (this.config.type === 'woods') {
+                            // Cabana
+                            const body = new THREE.Mesh(new THREE.BoxGeometry(10, 8, 10), woodMat);
+                            body.position.y = 4;
+                            const roof = new THREE.Mesh(new THREE.ConeGeometry(9, 6, 4), roofMat);
+                            roof.position.y = 11;
+                            roof.rotation.y = Math.PI / 4; // Pirâmide
+                            obs.add(body, roof);
+                        } else if (this.config.type === 'desert') {
+                            // Casa de deserto
+                            const body = new THREE.Mesh(new THREE.BoxGeometry(10, 8, 10), sandMat);
+                            body.position.y = 4;
+                            const roof = new THREE.Mesh(new THREE.BoxGeometry(11, 1, 11), roofMat);
+                            roof.position.y = 8.5;
+                            obs.add(body, roof);
                         } else {
-                            obs = new THREE.Mesh(rockGeo, rockMat);
-                            obs.position.y = 3;
+                            // Iglu
+                            const dome = new THREE.Mesh(new THREE.SphereGeometry(7, 8, 6, 0, Math.PI*2, 0, Math.PI/2), snowMat);
+                            dome.scale.y = 0.8;
+                            dome.position.y = 0;
+                            const tunnel = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 6), snowMat);
+                            tunnel.position.set(0, 2, 6);
+                            obs.add(dome, tunnel);
                         }
-                    } else if (this.config.type === 'desert') {
-                        obs = Math.random() > 0.3 ? new THREE.Mesh(cactusGeo, cactusMat) : new THREE.Mesh(rockGeo, rockMat);
-                        obs.position.y = 7;
                     } else {
-                        obs = Math.random() > 0.5 ? new THREE.Mesh(iceSpikeGeo, iceMat) : new THREE.Mesh(rockGeo, iceMat);
-                        obs.position.y = 5;
+                        // Cenário padrão
+                        if (this.config.type === 'woods') {
+                            if(Math.random() > 0.2) {
+                                obs = new THREE.Group();
+                                const trunk = new THREE.Mesh(treeTrunkGeo, trunkMat);
+                                trunk.position.y = 5;
+                                const top = new THREE.Mesh(treeTopGeo, leavesMat);
+                                top.position.y = 15;
+                                obs.add(trunk, top);
+                                obs.position.y = -2; 
+                            } else {
+                                obs = new THREE.Mesh(rockGeo, rockMat);
+                                obs.position.y = 3;
+                            }
+                        } else if (this.config.type === 'desert') {
+                            obs = Math.random() > 0.3 ? new THREE.Mesh(cactusGeo, cactusMat) : new THREE.Mesh(rockGeo, rockMat);
+                            obs.position.y = 7;
+                        } else {
+                            obs = Math.random() > 0.5 ? new THREE.Mesh(iceSpikeGeo, iceMat) : new THREE.Mesh(rockGeo, iceMat);
+                            obs.position.y = 5;
+                        }
                     }
                     
                     if(obs) {
                         obs.position.x = x; 
                         obs.position.z = z;
                         obs.position.y += h; 
-                        obs.castShadow = true; scene.add(obs);
+                        
+                        // Propagar sombra para grupos
+                        obs.traverse(c => {
+                            if (c.isMesh) {
+                                c.castShadow = true;
+                                c.receiveShadow = true;
+                            }
+                        });
+                        
+                        scene.add(obs);
                     }
                 }
             }
@@ -973,7 +1069,8 @@
                         
                         if (lookDir.dot(myDir) > 0.7) { 
                             const aimDir = new THREE.Vector3().subVectors(closest.position, this.position).normalize();
-                            const inaccuracy = 0.15; 
+                            // Aumentado drasticamente a imprecisão de 0.15 para 0.5
+                            const inaccuracy = 0.5; 
                             aimDir.x += (Math.random() - 0.5) * inaccuracy;
                             aimDir.y += (Math.random() - 0.5) * inaccuracy;
                             aimDir.z += (Math.random() - 0.5) * inaccuracy;
