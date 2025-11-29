@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Avian Arcana: Sky Lords (Complete)</title>
+    <title>Avian Arcana: Sky Lords (Refined)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@500;700&display=swap');
 
@@ -305,6 +305,10 @@
         let mouseX = 0, mouseY = 0;
         let killCount = 0;
         let sessionCoins = 0;
+        
+        // Utilitários para raycasting e mira
+        const raycaster = new THREE.Raycaster();
+        const screenCenter = new THREE.Vector2(0, 0);
 
         const keys = { w: false, s: false, a: false, d: false, space: false, q: false };
         
@@ -427,6 +431,8 @@
                 this.config = MAP_TYPES[mapKey];
                 this.stormRadius = 800;
                 this.maxRadius = 800;
+                this.noise = new ImprovedNoise(); // Instância única de ruído
+                
                 this.initEnvironment();
                 this.initTerrain();
                 this.initStorm();
@@ -451,18 +457,38 @@
                 scene.add(sun);
             }
 
+            // Função centralizada para calcular a altura do terreno
+            getTerrainHeight(x, z) {
+                // Como o PlaneGeometry é girado -90 graus no eixo X:
+                // O Y local do plano corresponde ao -Z do mundo.
+                // Usamos as mesmas coordenadas de ruído da geração para consistência.
+                const y = -z; 
+                
+                let h = this.noise.noise(x*0.003, y*0.003, 0) * 80; 
+                h += this.noise.noise(x*0.01, y*0.01, 10) * 10;
+                
+                const dist = Math.sqrt(x*x + y*y);
+                if(dist > 900) h += (dist-900) * 0.8;
+                
+                return h;
+            }
+
             initTerrain() {
                 const geo = new THREE.PlaneGeometry(2400, 2400, 128, 128);
                 const pos = geo.attributes.position;
-                const noise = new ImprovedNoise();
                 
                 for(let i=0; i<pos.count; i++) {
                     const x = pos.getX(i);
                     const y = pos.getY(i); 
-                    let z = noise.noise(x*0.003, y*0.003, 0) * 80; 
-                    z += noise.noise(x*0.01, y*0.01, 10) * 10;
-                    const dist = Math.sqrt(x*x + y*y);
-                    if(dist > 900) z += (dist-900) * 0.8;
+                    
+                    // Usa a função centralizada para consistência (mas note que aqui passamos 'x' e '-y' 
+                    // pois 'y' do plano local será o '-z' do mundo quando rotacionado)
+                    // Para simplificar, usamos a lógica raw do noise aqui pra garantir que bata 100% com o getTerrainHeight
+                    // que recebe WorldCoords.
+                    // WorldX = x, WorldZ = -y.
+                    // getTerrainHeight(x, -y) -> usa -(-y) = y.
+                    
+                    let z = this.getTerrainHeight(x, -y);
                     pos.setZ(i, z);
                 }
                 geo.computeVertexNormals();
@@ -496,6 +522,9 @@
                     const z = Math.sin(angle)*rad;
                     let obs;
                     
+                    // Obter altura do terreno para posicionar o objeto corretamente
+                    const h = this.getTerrainHeight(x, z);
+
                     if (this.config.type === 'woods') {
                         if(Math.random() > 0.2) {
                             obs = new THREE.Group();
@@ -504,7 +533,7 @@
                             const top = new THREE.Mesh(treeTopGeo, leavesMat);
                             top.position.y = 15;
                             obs.add(trunk, top);
-                            obs.position.y = -2;
+                            obs.position.y = -2; // Ajuste fino da base da árvore
                         } else {
                             obs = new THREE.Mesh(rockGeo, rockMat);
                             obs.position.y = 3;
@@ -518,7 +547,10 @@
                     }
                     
                     if(obs) {
-                        obs.position.x = x; obs.position.z = z;
+                        obs.position.x = x; 
+                        obs.position.z = z;
+                        // Ajustar a altura base do objeto com o terreno
+                        obs.position.y += h; 
                         obs.castShadow = true; scene.add(obs);
                     }
                 }
@@ -535,7 +567,11 @@
                     const nest = new THREE.Mesh(nestGeo, nestMat);
                     const angle = Math.random() * Math.PI * 2;
                     const rad = 200 + Math.random() * 500;
-                    nest.position.set(Math.cos(angle)*rad, 5, Math.sin(angle)*rad);
+                    const x = Math.cos(angle)*rad;
+                    const z = Math.sin(angle)*rad;
+                    const h = this.getTerrainHeight(x, z);
+                    
+                    nest.position.set(x, h + 5, z);
                     nest.rotation.x = Math.PI/2;
                     scene.add(nest);
                     nests.push(nest);
@@ -587,7 +623,7 @@
                 if(!isPlayer) {
                     const ang = Math.random()*Math.PI*2;
                     const spawnRad = 80 + Math.random() * 700;
-                    this.position.set(Math.cos(ang)*spawnRad, 15 + Math.random()*25, Math.sin(ang)*spawnRad);
+                    this.position.set(Math.cos(ang)*spawnRad, 100, Math.sin(ang)*spawnRad); // Spawn mais alto
                     this.rotation.set(0, Math.random() * Math.PI * 2, 0);
                 }
                 
@@ -621,15 +657,38 @@
                 }
             }
 
-            fire() {
+            fire(forcedDir = null) {
                 if(this.stats.mana < 15) return;
                 this.stats.mana -= 15;
                 const projGeo = new THREE.SphereGeometry(0.8);
                 const projMat = new THREE.MeshBasicMaterial({color: this.isPlayer ? 0x00ffff : 0xff3300});
                 const mesh = new THREE.Mesh(projGeo, projMat);
-                mesh.position.copy(this.mesh.position).add(new THREE.Vector3(0,-0.5,2).applyEuler(this.rotation));
                 
-                const dir = new THREE.Vector3(0,0,1).applyEuler(this.rotation).normalize();
+                // Ponto de saída do tiro (bico/cabeça)
+                const muzzleOffset = new THREE.Vector3(0, 0, 1.5).applyEuler(this.rotation);
+                mesh.position.copy(this.mesh.position).add(muzzleOffset);
+                
+                let dir;
+
+                if (this.isPlayer) {
+                    // MIRA MELHORADA: Raycasting do centro da tela para o mundo
+                    // Isso garante que o tiro vá EXATAMENTE onde a mira (crosshair) está
+                    raycaster.setFromCamera(screenCenter, camera);
+                    
+                    // Definir um ponto alvo distante na direção da câmera
+                    const targetPoint = new THREE.Vector3();
+                    raycaster.ray.at(500, targetPoint); // Mira 500 unidades a frente
+
+                    // Vetor do pássaro até o ponto de mira
+                    dir = new THREE.Vector3().subVectors(targetPoint, mesh.position).normalize();
+                } else {
+                    // IA MIRA: Usa a direção passada ou frente, com imprecisão
+                    if (forcedDir) {
+                        dir = forcedDir.normalize();
+                    } else {
+                        dir = new THREE.Vector3(0,0,1).applyEuler(this.rotation).normalize();
+                    }
+                }
                 
                 projectiles.push({ mesh, dir, owner: this, life: 3, damage: 35 });
                 scene.add(mesh);
@@ -760,7 +819,16 @@
                 const desiredVel = forward.multiplyScalar(acceleration);
                 this.velocity.lerp(desiredVel, 2 * dt);
 
-                if(this.position.y < 5) {
+                // --- COLISÃO COM TERRENO MELHORADA ---
+                if (world) {
+                    const terrainH = world.getTerrainHeight(this.position.x, this.position.z);
+                    const safeH = terrainH + 5; // Altura segura acima do terreno (raio do pássaro + margem)
+                    
+                    if(this.position.y < safeH) {
+                        this.position.y = safeH;
+                        this.velocity.y = Math.max(0, this.velocity.y);
+                    }
+                } else if(this.position.y < 5) { // Fallback
                     this.position.y = 5;
                     this.velocity.y = Math.max(0, this.velocity.y);
                 }
@@ -804,9 +872,11 @@
             }
 
             changeTarget() {
-                const r = world.stormRadius * 0.8;
+                // IA MELHORADA: Movimentação mais dinâmica
+                const r = world.stormRadius * 0.9;
                 const a = Math.random() * 6.28;
-                this.targetPoint.set(Math.cos(a)*r, 10 + Math.random()*25, Math.sin(a)*r);
+                // Varia mais a altura para ocupar melhor o mapa
+                this.targetPoint.set(Math.cos(a)*r, 10 + Math.random() * (MAX_FLIGHT_HEIGHT - 20), Math.sin(a)*r);
             }
 
             update(dt) {
@@ -838,9 +908,19 @@
                         const lookDir = new THREE.Vector3().subVectors(closest.position, this.position).normalize();
                         const myDir = new THREE.Vector3(0,0,1).applyEuler(this.rotation);
                         
-                        if (lookDir.dot(myDir) > 0.8) { 
-                            this.fire();
-                            this.attackCooldown = 0.5 + Math.random(); 
+                        if (lookDir.dot(myDir) > 0.7) { // Ângulo um pouco mais aberto para atirar
+                            // IA MIRA HUMANIZADA (MIRA RUIM)
+                            // Calcula direção correta
+                            const aimDir = new THREE.Vector3().subVectors(closest.position, this.position).normalize();
+                            
+                            // Adiciona erro (jitter/spread)
+                            const inaccuracy = 0.15; // Fator de erro
+                            aimDir.x += (Math.random() - 0.5) * inaccuracy;
+                            aimDir.y += (Math.random() - 0.5) * inaccuracy;
+                            aimDir.z += (Math.random() - 0.5) * inaccuracy;
+                            
+                            this.fire(aimDir);
+                            this.attackCooldown = 0.5 + Math.random() * 0.8; 
                         }
                     }
 
@@ -850,7 +930,8 @@
                     }
                 } else {
                     const distToPoint = new THREE.Vector2(this.position.x - this.targetPoint.x, this.position.z - this.targetPoint.z).length();
-                    if(distToPoint < 20) this.changeTarget();
+                    // Muda de alvo mais cedo se estiver perto ou aleatoriamente para parecer mais vivo
+                    if(distToPoint < 30 || Math.random() < 0.005) this.changeTarget();
                 }
 
                 const toTarget = new THREE.Vector3().subVectors(targetPos, this.position);
@@ -861,26 +942,33 @@
                 this.rotation.y += yawDiff * 2.5 * dt;
 
                 const hDiff = targetPos.y - this.position.y;
-                let targetPitch = THREE.MathUtils.clamp(hDiff * 0.05, -0.5, 0.5);
+                let targetPitch = THREE.MathUtils.clamp(hDiff * 0.05, -0.6, 0.6);
                 this.rotation.x = THREE.MathUtils.lerp(this.rotation.x, targetPitch, 3 * dt);
                 this.rotation.z = THREE.MathUtils.lerp(this.rotation.z, -yawDiff * 0.5, 3 * dt);
 
                 const forward = new THREE.Vector3(0,0,1).applyEuler(this.rotation);
                 this.position.addScaledVector(forward, this.stats.speed * speedMult * dt);
 
-                if (this.position.y < 8) {
-                    this.position.y = 8;
-                    this.rotation.x = Math.max(0, this.rotation.x); 
-                    this.targetPoint.y = Math.max(20, this.targetPoint.y); 
+                // --- COLISÃO COM TERRENO NA IA ---
+                if (world) {
+                    const terrainH = world.getTerrainHeight(this.position.x, this.position.z);
+                    const safeH = terrainH + 8; // IA voa um pouco mais alto
+                    
+                    if (this.position.y < safeH) {
+                        this.position.y = safeH;
+                        this.rotation.x = Math.max(0.2, this.rotation.x); 
+                        // Força IA a subir o alvo se colidir
+                        this.targetPoint.y = Math.max(this.targetPoint.y, safeH + 20); 
+                    }
                 }
-                
+
                 if (this.position.y > MAX_FLIGHT_HEIGHT) {
                     this.position.y = MAX_FLIGHT_HEIGHT;
                     this.rotation.x = Math.min(0, this.rotation.x);
                     this.targetPoint.y = Math.min(this.targetPoint.y, MAX_FLIGHT_HEIGHT - 10);
                 }
 
-                if (this.position.length() > world.stormRadius) this.targetPoint.set(0, 20, 0);
+                if (this.position.length() > world.stormRadius) this.targetPoint.set(0, 40, 0);
 
                 this.mesh.position.copy(this.position);
                 this.mesh.rotation.copy(this.rotation);
@@ -898,12 +986,25 @@
 
         // --- SISTEMAS GERAIS ---
         function updateProjectiles(dt) {
+            // COLISÃO MELHORADA: Raio de acerto maior
+            const HIT_RADIUS_PLAYER = 4.5; // Maior para facilitar acertar players/bots
+            const HIT_RADIUS_PROJ = 2;
+
             for(let i = projectiles.length-1; i>=0; i--) {
                 const p = projectiles[i];
                 p.life -= dt;
-                p.mesh.position.addScaledVector(p.dir, 180 * dt); 
+                // Velocidade do projétil aumentada para parecer mais direto
+                p.mesh.position.addScaledVector(p.dir, 220 * dt); 
 
-                if(p.owner !== player && !player.dead && p.mesh.position.distanceTo(player.position) < 3) {
+                // Colisão do projétil com o terreno (opcional, mas legal para realismo)
+                const terrainH = world.getTerrainHeight(p.mesh.position.x, p.mesh.position.z);
+                if (p.mesh.position.y < terrainH) {
+                    scene.remove(p.mesh);
+                    projectiles.splice(i, 1);
+                    continue;
+                }
+
+                if(p.owner !== player && !player.dead && p.mesh.position.distanceTo(player.position) < HIT_RADIUS_PLAYER) {
                     player.takeDamage(p.damage);
                     scene.remove(p.mesh);
                     projectiles.splice(i, 1);
@@ -913,7 +1014,7 @@
                 let hit = false;
                 for(let b of bots) {
                     if(b.dead) continue;
-                    if(p.owner !== b && p.mesh.position.distanceTo(b.position) < 4) {
+                    if(p.owner !== b && p.mesh.position.distanceTo(b.position) < HIT_RADIUS_PLAYER) {
                         b.takeDamage(p.damage);
                         b.lastHitter = p.owner;
                         hit = true;
