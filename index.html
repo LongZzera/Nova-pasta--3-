@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Avian Arcana: Sky Lords (Zanholo Remodel)</title>
+    <title>BIRD GAME: Battle Royale</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@500;700&display=swap');
 
@@ -19,16 +19,16 @@
         #game-ui {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; display: none;
+            pointer-events: none; display: none; z-index: 50;
         }
 
         .hud-panel {
             position: absolute;
-            background: rgba(20, 20, 35, 0.4);
+            background: rgba(20, 20, 35, 0.6);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 15px; border-radius: 12px;
-            color: white; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            color: white; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
         }
 
         /* BARRA DE STATUS */
@@ -57,8 +57,26 @@
         #ability-cooldown { font-size: 12px; color: #aaa; margin-left: auto; }
 
         /* INFO TOPO DIREITA */
-        #info-panel { top: 30px; right: 30px; text-align: right; border-right: 4px solid #ffcc00; }
-        #info-panel h2 { margin: 0; font-family: 'Black Ops One', cursive; font-size: 32px; color: #ffcc00; letter-spacing: 2px; }
+        #info-panel { 
+            top: 30px; right: 30px; 
+            text-align: right; 
+            border-right: 4px solid #ffcc00; 
+            min-width: 150px;
+        }
+        #info-panel h2 { 
+            margin: 0 0 10px 0; 
+            font-family: 'Black Ops One', cursive; 
+            font-size: 28px; 
+            color: #fff; 
+            letter-spacing: 1px; 
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 5px;
+        }
+        .hud-stat-row {
+            display: flex; align-items: center; justify-content: flex-end;
+            font-size: 20px; font-weight: bold; margin-top: 5px;
+            font-family: 'Black Ops One'; text-shadow: 0 2px 4px black;
+        }
         
         #crosshair {
             position: absolute; top: 50%; left: 50%; width: 20px; height: 20px;
@@ -83,7 +101,14 @@
             text-shadow: 0 0 10px orange; display: none; animation: pulse 0.5s infinite;
         }
 
-        /* --- LOBBY UI ATUALIZADA --- */
+        #arena-notification {
+            position: absolute; top: 25%; left: 50%; transform: translateX(-50%);
+            color: #00ffcc; font-family: 'Black Ops One'; font-size: 28px;
+            text-shadow: 0 0 10px #00ffcc; text-align: center;
+            opacity: 0; transition: opacity 0.5s;
+        }
+
+        /* --- LOBBY UI --- */
         #lobby-ui {
             position: absolute; width: 100%; height: 100%;
             background: radial-gradient(circle at center, rgba(26, 26, 46, 0.4) 0%, #000 100%);
@@ -92,9 +117,8 @@
             pointer-events: auto;
         }
 
-        /* NAVEGAÇÃO SUPERIOR */
         .lobby-nav {
-            display: flex; justify-content: center; gap: 40px;
+            display: flex; justify-content: center; gap: 30px;
             margin-top: 20px; z-index: 20;
         }
         .nav-btn {
@@ -106,35 +130,94 @@
         .nav-btn:hover { color: white; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
         .nav-btn.active { color: #ff00cc; border-bottom: 2px solid #ff00cc; text-shadow: 0 0 15px #ff00cc; }
 
-        .coin-display {
+        .currency-bar {
             position: absolute; top: 30px; right: 40px;
-            font-size: 20px; color: #ffcc00; font-weight: bold;
+            display: flex; gap: 20px; z-index: 25;
+        }
+        .currency-item {
+            font-size: 20px; font-weight: bold;
             background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 30px;
-            border: 2px solid #ffcc00; box-shadow: 0 0 15px rgba(255, 204, 0, 0.3);
-            display: flex; align-items: center; gap: 10px; z-index: 25;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            display: flex; align-items: center; gap: 10px; border: 2px solid;
         }
 
-        /* PAGINAS */
+        /* CONFIG BTN */
+        #settings-btn {
+            position: absolute; top: 30px; left: 40px; z-index: 25;
+            background: rgba(0,0,0,0.6); border: 2px solid #aaa; color: #aaa;
+            width: 50px; height: 50px; border-radius: 50%; font-size: 24px;
+            cursor: pointer; display: grid; place-items: center; transition: all 0.2s;
+        }
+        #settings-btn:hover { background: #333; color: white; border-color: white; transform: rotate(90deg); }
+
+        /* SETTINGS MODAL */
+        #settings-modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 100; display: none;
+            align-items: center; justify-content: center; backdrop-filter: blur(5px);
+        }
+        .settings-content {
+            background: linear-gradient(135deg, #222, #111); border: 2px solid #ff00cc;
+            padding: 40px; border-radius: 20px; width: 400px; text-align: center;
+            box-shadow: 0 0 30px rgba(255, 0, 204, 0.2);
+        }
+        .settings-title { font-family: 'Black Ops One'; font-size: 32px; color: #ff00cc; margin-bottom: 30px; }
+        .lang-options { display: flex; gap: 20px; justify-content: center; margin-bottom: 30px; }
+        .lang-btn {
+            background: #333; border: 2px solid #555; padding: 15px; border-radius: 10px;
+            cursor: pointer; width: 120px; transition: all 0.2s;
+        }
+        .lang-btn:hover { background: #444; }
+        .lang-btn.active { border-color: #00ffcc; background: #004433; box-shadow: 0 0 15px #00ffcc; }
+        .lang-flag { font-size: 40px; display: block; margin-bottom: 5px; }
+        .lang-name { font-family: 'Rajdhani'; font-weight: bold; color: white; }
+        .close-settings {
+            background: transparent; border: 2px solid #aaa; color: #aaa;
+            padding: 10px 30px; font-family: 'Black Ops One'; font-size: 18px; cursor: pointer;
+        }
+        .close-settings:hover { border-color: white; color: white; }
+
+
         .page-container {
             flex: 1; position: relative; width: 100%; height: 100%;
-            display: none; /* Controlado via JS */
+            display: none; 
         }
         .page-container.active { display: block; }
 
-        /* PAGINA: INÍCIO */
+        /* INÍCIO */
         .home-content {
-            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
-            display: flex; flex-direction: column; align-items: center; gap: 30px;
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
             text-align: center;
         }
         .lobby-title {
-            font-family: 'Black Ops One'; font-size: 64px; text-transform: uppercase;
+            font-family: 'Black Ops One'; font-size: 80px; text-transform: uppercase;
             background: linear-gradient(to bottom, #fff, #999);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 0 15px rgba(255,255,255,0.3));
-            margin-bottom: 20px;
         }
-        .map-selector { display: flex; gap: 20px; margin-bottom: 20px; }
+        
+        .mode-selector {
+            display: flex; background: rgba(0,0,0,0.7); border-radius: 10px;
+            padding: 5px; border: 1px solid #444; gap: 5px;
+        }
+        .mode-option {
+            padding: 10px 20px; cursor: pointer; border-radius: 5px;
+            font-family: 'Black Ops One'; color: #aaa; transition: all 0.2s;
+        }
+        .mode-option.active {
+            background: #ff00cc; color: white; text-shadow: 0 0 10px white;
+        }
+        .mode-option:hover:not(.active) { background: rgba(255,255,255,0.1); }
+
+        .arena-info-box {
+            background: linear-gradient(90deg, #222, #442200); border: 2px solid #ffaa00;
+            padding: 10px 20px; border-radius: 8px; color: #ffcc00;
+            font-family: 'Rajdhani'; font-weight: bold; text-align: center;
+            display: none; 
+        }
+
+        .map-selector { display: flex; gap: 20px; margin-bottom: 10px; }
         .map-btn {
             background: rgba(0,0,0,0.5); border: 2px solid #555; color: #aaa;
             padding: 10px 30px; font-family: 'Black Ops One'; font-size: 18px;
@@ -143,7 +226,7 @@
         .map-btn.active { background: white; color: black; border-color: white; box-shadow: 0 0 20px white; }
         
         #start-btn {
-            padding: 20px 60px; font-size: 42px;
+            padding: 15px 50px; font-size: 36px;
             background: linear-gradient(45deg, #ff00cc, #6600ff);
             border: none; color: white; font-family: 'Black Ops One';
             cursor: pointer; clip-path: polygon(10% 0, 100% 0, 100% 80%, 90% 100%, 0 100%, 0 20%);
@@ -151,7 +234,7 @@
         }
         #start-btn:hover { transform: scale(1.05); filter: brightness(1.2); }
 
-        /* PAGINA: VESTIÁRIO */
+        /* VESTIÁRIO & UPGRADE */
         .locker-layout {
             display: flex; width: 100%; height: 100%;
             justify-content: space-between; padding: 40px; box-sizing: border-box;
@@ -178,9 +261,31 @@
             padding: 5px 10px; cursor: pointer; border-radius: 4px; font-size: 12px;
         }
 
-        /* PAGINA: PASSE */
+        /* UPGRADES */
+        .upgrade-row {
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 5px;
+        }
+        .upgrade-info { flex: 1; }
+        .upgrade-name { font-size: 14px; font-weight: bold; color: #eee; }
+        .upgrade-level { font-size: 12px; color: #aaa; }
+        .upgrade-btn {
+            background: #00ccff; border: none; color: #000; font-weight: bold;
+            padding: 5px 10px; border-radius: 4px; cursor: pointer;
+        }
+        .upgrade-btn:hover { background: #fff; }
+        .upgrade-btn:disabled { background: #555; color: #888; cursor: not-allowed; }
+
+        .level-badge {
+            text-align: center; margin-bottom: 20px;
+            font-family: 'Black Ops One'; color: #ffcc00; font-size: 24px;
+            border: 2px solid #ffcc00; border-radius: 10px; padding: 10px;
+            background: rgba(255, 204, 0, 0.1);
+        }
+
+        /* PASSE */
         .pass-container {
-            width: 80%; height: 70%; margin: 80px auto;
+            width: 80%; height: 60%; margin: 80px auto 20px auto;
             background: rgba(0,0,0,0.8); border: 2px solid #444;
             border-radius: 20px; padding: 40px; overflow-y: auto;
             display: flex; flex-direction: column; align-items: center;
@@ -192,26 +297,37 @@
             padding-bottom: 20px;
         }
         .pass-tier {
-            min-width: 140px; height: 180px; background: #222;
+            min-width: 160px; height: 200px; background: #222;
             border: 1px solid #444; border-radius: 10px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            position: relative;
+            position: relative; cursor: pointer; transition: transform 0.2s;
         }
-        .pass-tier.claimed { border-color: #0f0; background: #1a2e1a; opacity: 0.5; }
+        .pass-tier:hover { transform: translateY(-5px); border-color: #fff; }
+        .pass-tier.claimed { border-color: #0f0; background: #1a2e1a; opacity: 0.8; }
         .pass-tier.locked { opacity: 0.5; }
         .tier-num { position: absolute; top: 10px; left: 10px; font-weight: bold; color: #aaa; }
-        .tier-reward { font-size: 24px; margin: 10px 0; }
-        .tier-label { font-size: 12px; color: #ccc; text-align: center; }
+        .tier-reward { font-size: 32px; margin: 10px 0; }
+        .tier-label { font-size: 12px; color: #ccc; text-align: center; text-transform: uppercase; padding: 0 10px; }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #ff00cc; cursor: pointer; margin-top: -8px; box-shadow: 0 0 10px #ff00cc; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #555; border-radius: 2px; }
 
         /* GAME OVER */
         #game-over-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 100; display: none;
+            background: rgba(0,0,0,0.95); z-index: 100; display: none;
             flex-direction: column; align-items: center; justify-content: center;
         }
-        #go-title { font-size: 100px; font-family: 'Black Ops One'; margin: 0; }
+        #go-title { font-size: 80px; font-family: 'Black Ops One'; margin: 0; }
+        .arena-results {
+            background: rgba(255,255,255,0.1); border-radius: 10px; padding: 20px; margin: 20px; width: 400px;
+        }
+        .arena-line { display: flex; justify-content: space-between; font-size: 18px; color: #ccc; margin: 5px 0; }
+        .arena-total { border-top: 2px solid white; margin-top: 10px; padding-top: 10px; font-size: 24px; color: #ffcc00; font-weight: bold; }
         
         @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        @keyframes pop { 0% { transform: scale(0.5); opacity:0; } 50% { transform: scale(1.2); opacity:1; } 100% { transform: scale(1); opacity:0; } }
     </style>
     <script type="importmap">
         {
@@ -226,47 +342,102 @@
 
     <!-- LOBBY UI -->
     <div id="lobby-ui">
-        <!-- Navegação Superior -->
+        <!-- Settings Button -->
+        <div id="settings-btn" onclick="openSettings()">⚙️</div>
+
         <div class="lobby-nav">
-            <button class="nav-btn active" onclick="switchTab('home')">Início</button>
-            <button class="nav-btn" onclick="switchTab('locker')">Vestiário</button>
-            <button class="nav-btn" onclick="switchTab('pass')">Passe</button>
+            <button class="nav-btn active" data-key="nav_home" onclick="switchTab('home')">Início</button>
+            <button class="nav-btn" data-key="nav_locker" onclick="switchTab('locker')">Vestiário</button>
+            <button class="nav-btn" data-key="nav_upgrade" onclick="switchTab('upgrade')">Evoluir</button>
+            <button class="nav-btn" data-key="nav_pass" onclick="switchTab('pass')">Passe</button>
         </div>
 
-        <div class="coin-display">🪙 <span id="player-coins">0</span></div>
+        <div class="currency-bar">
+            <div class="currency-item" style="color: #ffcc00; border-color:#ffcc00">🪙 <span id="player-coins">0</span></div>
+            <div class="currency-item" style="color: #00ffcc; border-color:#00ffcc">🏆 <span id="arena-points-display">0</span></div>
+        </div>
+
+        <!-- SETTINGS MODAL -->
+        <div id="settings-modal">
+            <div class="settings-content">
+                <div class="settings-title" data-key="settings_title">CONFIGURAÇÕES</div>
+                <div style="font-size:14px; color:#aaa; margin-bottom:10px" data-key="lang_label">IDIOMA / LANGUAGE</div>
+                <div class="lang-options">
+                    <div class="lang-btn active" id="lang-pt" onclick="setLanguage('pt')">
+                        <span class="lang-flag">🇧🇷</span>
+                        <span class="lang-name">PORTUGUÊS</span>
+                    </div>
+                    <div class="lang-btn" id="lang-en" onclick="setLanguage('en')">
+                        <span class="lang-flag">🇺🇸</span>
+                        <span class="lang-name">ENGLISH</span>
+                    </div>
+                </div>
+                <button class="close-settings" onclick="closeSettings()" data-key="btn_close">FECHAR</button>
+            </div>
+        </div>
 
         <!-- PÁGINA: INÍCIO -->
         <div id="page-home" class="page-container active">
             <div class="home-content">
-                <div class="lobby-title">Sky Lords<br><span style="font-size:30px; letter-spacing: 5px; color:#ff00cc">Battle Royale</span></div>
+                <div class="lobby-title">BIRD GAME<br><span style="font-size:30px; letter-spacing: 5px; color:#ff00cc">Battle Royale</span></div>
                 
-                <div class="map-selector">
-                    <button class="map-btn active" onclick="selectMap('woods')">FLORESTA</button>
-                    <button class="map-btn" onclick="selectMap('desert')">DESERTO</button>
-                    <button class="map-btn" onclick="selectMap('arctic')">GELO</button>
+                <div class="mode-selector">
+                    <div class="mode-option active" data-key="mode_casual" onclick="setGameMode('casual', this)">CASUAL</div>
+                    <div class="mode-option" data-key="mode_arena" onclick="setGameMode('arena', this)">ARENA (RANKED)</div>
                 </div>
 
-                <button id="start-btn" onclick="startGame()">JOGAR</button>
+                <div id="arena-details" class="arena-info-box">
+                    <div id="arena-division">DIVISÃO ABERTA I</div>
+                    <div style="font-size:14px; color:#aaa"><span data-key="bus_fare">TARIFA DE ÔNIBUS:</span> <span id="bus-fare">0</span> PTS</div>
+                </div>
+
+                <div class="map-selector">
+                    <button class="map-btn active" data-key="map_woods" onclick="selectMap('woods')">FLORESTA</button>
+                    <button class="map-btn" data-key="map_desert" onclick="selectMap('desert')">DESERTO</button>
+                    <button class="map-btn" data-key="map_arctic" onclick="selectMap('arctic')">GELO</button>
+                </div>
+
+                <button id="start-btn" onclick="startGame()" data-key="btn_play">JOGAR</button>
             </div>
         </div>
 
         <!-- PÁGINA: VESTIÁRIO -->
         <div id="page-locker" class="page-container">
             <div class="locker-layout">
-                <!-- Coluna de Pássaros (Classes) -->
                 <div class="locker-column">
-                    <h3>CLASSES</h3>
+                    <h3 data-key="title_classes">CLASSES</h3>
                     <div id="locker-bird-list"></div>
                 </div>
-                
-                <!-- Stats no Centro (Opcional, ou usar o 3D) -->
-                <div style="flex:1;"></div> 
-
-                <!-- Coluna de Skins -->
+                <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding-bottom:50px;">
+                    <div style="background:rgba(0,0,0,0.5); padding:10px 20px; border-radius:20px; border:1px solid #333; text-align:center;">
+                        <input type="range" min="0" max="6.28" step="0.01" value="0" oninput="updateBirdRotation(this.value)" style="width:200px;">
+                        <div style="font-size:10px; color:#aaa; margin-top:5px; font-family:'Black Ops One'" data-key="rotate_model">GIRAR MODELO</div>
+                    </div>
+                </div> 
                 <div class="locker-column">
-                    <h3>SKINS</h3>
+                    <h3 data-key="title_skins">SKINS</h3>
                     <div id="locker-skin-list"></div>
                     <div id="skin-stats-panel" class="stats-panel" style="position:relative; width:auto; bottom:auto; right:auto; margin-top:20px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PÁGINA: UPGRADE -->
+        <div id="page-upgrade" class="page-container">
+            <div class="locker-layout">
+                <div class="locker-column">
+                    <h3 data-key="title_select">SELECIONAR</h3>
+                    <div id="upgrade-bird-list"></div>
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding-bottom:50px;">
+                    <div style="background:rgba(0,0,0,0.5); padding:10px 20px; border-radius:20px; border:1px solid #333; text-align:center;">
+                        <input type="range" min="0" max="6.28" step="0.01" value="0" oninput="updateBirdRotation(this.value)" style="width:200px;">
+                        <div style="font-size:10px; color:#aaa; margin-top:5px; font-family:'Black Ops One'" data-key="rotate_model">GIRAR MODELO</div>
+                    </div>
+                </div>
+                <div class="locker-column">
+                    <h3 data-key="title_stats">ESTATÍSTICAS</h3>
+                    <div id="upgrade-panel-content"></div>
                 </div>
             </div>
         </div>
@@ -275,13 +446,15 @@
         <div id="page-pass" class="page-container">
             <div class="pass-container">
                 <div class="pass-header">
-                    <h1>PASSE DE BATALHA</h1>
-                    <div style="color:#aaa;">TEMPORADA 1: ASAS DE FOGO</div>
-                    <div style="margin-top:10px; font-weight:bold;">NÍVEL ATUAL: <span id="bp-level" style="color:#0f0">1</span></div>
+                    <h1 data-key="pass_title">PASSE DE BATALHA</h1>
+                    <div style="color:#aaa;" data-key="pass_season">TEMPORADA 1: ASAS DE FOGO</div>
+                    <div style="margin-top:10px; font-weight:bold;"><span data-key="pass_level">NÍVEL ATUAL:</span> <span id="bp-level" style="color:#0f0">1</span></div>
                 </div>
-                <div class="pass-track" id="pass-track-list">
-                    <!-- Gerado via JS -->
-                </div>
+                <div class="pass-track" id="pass-track-list"></div>
+            </div>
+            <div style="position:absolute; bottom:30px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.5); padding:10px 20px; border-radius:20px; border:1px solid #333; text-align:center;">
+                <input type="range" min="0" max="6.28" step="0.01" value="0" oninput="updateBirdRotation(this.value)" style="width:200px;">
+                <div style="font-size:10px; color:#aaa; margin-top:5px; font-family:'Black Ops One'" data-key="rotate_model">GIRAR MODELO</div>
             </div>
         </div>
     </div>
@@ -291,32 +464,38 @@
         <div id="crosshair"></div>
         <div id="storm-warning">! TEMPESTADE !</div>
         <div id="altitude-warning">! ALTITUDE MÁXIMA !</div>
+        <div id="arena-notification"></div>
         
         <div class="hud-panel" id="info-panel">
-            <h2>VIVOS: <span id="alive-count">50</span></h2>
-            <div style="font-size: 14px; color: #aaa;">Abates: <span id="kill-count" style="color:white">0</span></div>
-            <div style="font-size: 14px; color: #ffcc00;">Moedas: <span id="session-coins" style="color:white">0</span></div>
+            <!-- Fix: separated span to not be overwritten -->
+            <h2><span data-key="hud_alive">VIVOS:</span> <span id="alive-count">50</span></h2>
+            <div class="hud-stat-row" style="color: #ff3333;">
+                <span>☠️</span> <span id="kill-count">0</span>
+            </div>
+            <div class="hud-stat-row" style="color: #ffcc00;">
+                <span>🪙</span> <span id="session-coins">0</span>
+            </div>
         </div>
 
         <div class="hud-panel" id="stats-bar">
             <div class="hud-content">
-                <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>VIDA</span> <span id="hp-val">100</span></div>
+                <div style="display:flex; justify-content:space-between; font-weight:bold;"><span data-key="hud_health">VIDA</span> <span id="hp-val">100</span></div>
                 <div class="bar-container"><div class="bar-fill" id="hp-bar"></div></div>
-                <div style="display:flex; justify-content:space-between; font-weight:bold; margin-top:5px;"><span>ENERGIA</span> <span id="mana-val">100</span></div>
+                <div style="display:flex; justify-content:space-between; font-weight:bold; margin-top:5px;"><span data-key="hud_energy">ENERGIA</span> <span id="mana-val">100</span></div>
                 <div class="bar-container"><div class="bar-fill" id="mana-bar"></div></div>
                 
                 <div id="ability-box">
                     <div id="ability-icon">Q</div>
                     <div>
                         <div id="ability-name">HABILIDADE</div>
-                        <div style="font-size:10px; color:#888;">PRESSIONE Q</div>
+                        <div style="font-size:10px; color:#888;" data-key="hud_press_q">PRESSIONE Q</div>
                     </div>
                     <div id="ability-cooldown">PRONTO</div>
                 </div>
 
                 <div style="font-size: 11px; color: #bbb; margin-top:8px; text-transform: uppercase;">
-                    <span style="color:#0f0">PROCURE NINHOS PARA CURAR!</span><br>
-                    SEGURE <b>ESPAÇO</b>: SUBIR | <b>W</b>: MERGULHO
+                    <span style="color:#0f0" data-key="hud_tip_heal">PROCURE NINHOS PARA CURAR!</span><br>
+                    <span data-key="hud_controls">SEGURE ESPAÇO: SUBIR | W: MERGULHO</span>
                 </div>
             </div>
         </div>
@@ -326,63 +505,265 @@
     <div id="game-over-screen">
         <h1 id="go-title">FIM DE JOGO</h1>
         <h2 id="go-msg" style="color:#aaa; font-family: 'Rajdhani'"></h2>
-        <div style="font-size: 20px; color: #ffcc00; margin-bottom: 20px;">Moedas Ganhas: +<span id="earned-coins">0</span></div>
-        <button class="map-btn active" style="margin-top:20px;" onclick="returnToLobby()">VOLTAR AO LOBBY</button>
+        <div style="font-size: 20px; color: #ffcc00; margin-bottom: 10px;"><span data-key="go_coins">Moedas Ganhas:</span> +<span id="earned-coins">0</span></div>
+        
+        <!-- Resultados da Arena -->
+        <div id="arena-results-box" class="arena-results" style="display:none;">
+            <div style="text-align:center; color:#00ffcc; margin-bottom:10px; font-family:'Black Ops One'" data-key="res_title">RESULTADOS ARENA</div>
+            <div class="arena-line"><span data-key="res_bus">Tarifa de Ônibus:</span> <span id="res-bus" style="color:#ff3333">0</span></div>
+            <div class="arena-line"><span data-key="res_kills">Abates (+20/cada):</span> <span id="res-kills" style="color:#00ffcc">0</span></div>
+            <div class="arena-line"><span data-key="res_place">Colocação:</span> <span id="res-place" style="color:#00ffcc">0</span></div>
+            <div class="arena-line arena-total"><span data-key="res_total">TOTAL:</span> <span id="res-total">0</span></div>
+        </div>
+
+        <button class="map-btn active" style="margin-top:20px;" onclick="returnToLobby()" data-key="btn_back">VOLTAR AO LOBBY</button>
     </div>
 
     <script type="module">
         import * as THREE from 'three';
         import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
 
+        // --- SISTEMA DE IDIOMA ---
+        const TEXTS = {
+            pt: {
+                nav_home: "Início",
+                nav_locker: "Vestiário",
+                nav_upgrade: "Evoluir",
+                nav_pass: "Passe",
+                settings_title: "CONFIGURAÇÕES",
+                lang_label: "IDIOMA / LANGUAGE",
+                btn_close: "FECHAR",
+                mode_casual: "CASUAL",
+                mode_arena: "ARENA (RANKED)",
+                bus_fare: "TARIFA DE ÔNIBUS:",
+                map_woods: "FLORESTA",
+                map_desert: "DESERTO",
+                map_arctic: "GELO",
+                btn_play: "JOGAR",
+                btn_buy: "COMPRAR",
+                btn_locked: "BLOQUEADO",
+                btn_owned: "ADQUIRIDO",
+                btn_pass_in: "NO PASSE",
+                title_classes: "CLASSES",
+                title_skins: "SKINS",
+                title_select: "SELECIONAR",
+                title_stats: "ESTATÍSTICAS",
+                rotate_model: "GIRAR MODELO",
+                sel_class: "CLASSE SELECIONADA",
+                pass_title: "PASSE DE BATALHA",
+                pass_season: "TEMPORADA 1: ASAS DE FOGO",
+                pass_level: "NÍVEL ATUAL:",
+                pass_current: "ATUAL",
+                reward_coins: "MOEDAS",
+                reward_bird: "PÁSSARO",
+                reward_skin_leg: "SKIN LENDÁRIA",
+                reward_skin_rare: "SKIN RARA",
+                level_badge: "NÍVEL",
+                btn_level_up: "SUBIR NÍVEL",
+                dmg_bonus: "+10% DANO DE TIRO",
+                stat_hp: "VIDA (HP)",
+                stat_mana: "ENERGIA (MANA)",
+                stat_speed: "VELOCIDADE",
+                hud_alive: "VIVOS:",
+                hud_health: "VIDA",
+                hud_energy: "ENERGIA",
+                hud_press_q: "PRESSIONE Q",
+                hud_ready: "PRONTO",
+                hud_tip_heal: "PROCURE NINHOS PARA CURAR!",
+                hud_controls: "SEGURE ESPAÇO: SUBIR | W: MERGULHO",
+                hud_storm: "VOCÊ ESTÁ NA TEMPESTADE!",
+                hud_storm_safe: "FUJA DA TEMPESTADE!",
+                go_title_win: "VITÓRIA",
+                go_title_lose: "ABATIDO",
+                go_msg_win: "Dominador dos Céus!",
+                go_msg_lose: "Melhor sorte na próxima.",
+                go_coins: "Moedas Ganhas:",
+                res_title: "RESULTADOS ARENA",
+                res_bus: "Tarifa de Ônibus:",
+                res_kills: "Abates (+20/cada):",
+                res_place: "Colocação:",
+                res_total: "TOTAL:",
+                btn_back: "VOLTAR AO LOBBY",
+                bird_eagle_name: "Águia Real", bird_eagle_desc: "Equilibrada. Habilidade: Empurrão Sônico.", bird_eagle_abil: "Onda Sônica",
+                bird_falcon_name: "Falcão Veloz", bird_falcon_desc: "Mergulho supersônico. Habilidade: Turbo.", bird_falcon_abil: "Turbo",
+                bird_zanholo_name: "Zanholo", bird_zanholo_desc: "Tucano do Passe. Ágil e exótico. Habilidade: Tropicália.", bird_zanholo_abil: "Tropicália",
+                bird_owl_name: "Coruja Sábia", bird_owl_desc: "Silenciosa. Habilidade: Invisibilidade.", bird_owl_abil: "Furtividade",
+                bird_hummingbird_name: "Beija-flor", bird_hummingbird_desc: "Difícil de acertar. Habilidade: Cura Rápida.", bird_hummingbird_abil: "Néctar",
+                bird_vulture_name: "Abutre", bird_vulture_desc: "Tanque. Habilidade: Escudo de Ossos.", bird_vulture_abil: "Escudo",
+                bird_crow_name: "Corvo", bird_crow_desc: "Sombrio. Habilidade: Teleporte.", bird_crow_abil: "Blink",
+                bird_phoenix_name: "Fênix", bird_phoenix_desc: "Renascida. Habilidade: Explosão Solar.", bird_phoenix_abil: "Nova",
+                bird_nagas_name: "Nagas", bird_nagas_desc: "LENDÁRIO. O terror dos céus. Habilidade: Buraco Negro.", bird_nagas_abil: "Vazio",
+                skin_default: "Padrão", skin_midnight: "Meia-Noite", skin_golden: "Dourado", skin_crimson: "Carmesim",
+                skin_spectral: "Espectral", skin_forest: "Camuflagem", skin_neon: "Cyber Neon",
+                div_open: "ABERTA", div_contender: "COMPETIDOR", div_champ: "CAMPEÃO"
+            },
+            en: {
+                nav_home: "Home",
+                nav_locker: "Locker",
+                nav_upgrade: "Upgrade",
+                nav_pass: "Pass",
+                settings_title: "SETTINGS",
+                lang_label: "LANGUAGE",
+                btn_close: "CLOSE",
+                mode_casual: "CASUAL",
+                mode_arena: "ARENA (RANKED)",
+                bus_fare: "BUS FARE:",
+                map_woods: "FOREST",
+                map_desert: "DESERT",
+                map_arctic: "ARCTIC",
+                btn_play: "PLAY",
+                btn_buy: "BUY",
+                btn_locked: "LOCKED",
+                btn_owned: "OWNED",
+                btn_pass_in: "IN PASS",
+                title_classes: "CLASSES",
+                title_skins: "SKINS",
+                title_select: "SELECT",
+                title_stats: "STATS",
+                rotate_model: "ROTATE MODEL",
+                sel_class: "SELECTED CLASS",
+                pass_title: "BATTLE PASS",
+                pass_season: "SEASON 1: WINGS OF FIRE",
+                pass_level: "CURRENT LEVEL:",
+                pass_current: "CURRENT",
+                reward_coins: "COINS",
+                reward_bird: "BIRD",
+                reward_skin_leg: "LEGENDARY SKIN",
+                reward_skin_rare: "RARE SKIN",
+                level_badge: "LEVEL",
+                btn_level_up: "LEVEL UP",
+                dmg_bonus: "+10% SHOT DAMAGE",
+                stat_hp: "HEALTH (HP)",
+                stat_mana: "ENERGY (MANA)",
+                stat_speed: "SPEED",
+                hud_alive: "ALIVE:",
+                hud_health: "HEALTH",
+                hud_energy: "ENERGY",
+                hud_press_q: "PRESS Q",
+                hud_ready: "READY",
+                hud_tip_heal: "FIND NESTS TO HEAL!",
+                hud_controls: "HOLD SPACE: FLY UP | W: DIVE",
+                hud_storm: "YOU ARE IN THE STORM!",
+                hud_storm_safe: "ESCAPE THE STORM!",
+                go_title_win: "VICTORY",
+                go_title_lose: "ELIMINATED",
+                go_msg_win: "Sky Dominator!",
+                go_msg_lose: "Better luck next time.",
+                go_coins: "Coins Earned:",
+                res_title: "ARENA RESULTS",
+                res_bus: "Bus Fare:",
+                res_kills: "Kills (+20/each):",
+                res_place: "Placement:",
+                res_total: "TOTAL:",
+                btn_back: "BACK TO LOBBY",
+                bird_eagle_name: "Golden Eagle", bird_eagle_desc: "Balanced. Ability: Sonic Push.", bird_eagle_abil: "Sonic Wave",
+                bird_falcon_name: "Peregrine Falcon", bird_falcon_desc: "Supersonic dive. Ability: Turbo.", bird_falcon_abil: "Turbo",
+                bird_zanholo_name: "Zanholo", bird_zanholo_desc: "Battle Pass Toucan. Exotic. Ability: Tropicalia.", bird_zanholo_abil: "Tropicalia",
+                bird_owl_name: "Wise Owl", bird_owl_desc: "Silent flight. Ability: Invisibility.", bird_owl_abil: "Stealth",
+                bird_hummingbird_name: "Hummingbird", bird_hummingbird_desc: "Hard to hit. Ability: Quick Heal.", bird_hummingbird_abil: "Nectar",
+                bird_vulture_name: "Vulture", bird_vulture_desc: "Tanky. Ability: Bone Shield.", bird_vulture_abil: "Shield",
+                bird_crow_name: "Crow", bird_crow_desc: "Darkness. Ability: Teleport.", bird_crow_abil: "Blink",
+                bird_phoenix_name: "Phoenix", bird_phoenix_desc: "Reborn. Ability: Solar Flare.", bird_phoenix_abil: "Nova",
+                bird_nagas_name: "Nagas", bird_nagas_desc: "LEGENDARY. Sky terror. Ability: Black Hole.", bird_nagas_abil: "Void",
+                skin_default: "Default", skin_midnight: "Midnight", skin_golden: "Golden", skin_crimson: "Crimson",
+                skin_spectral: "Spectral", skin_forest: "Camo", skin_neon: "Cyber Neon",
+                div_open: "OPEN", div_contender: "CONTENDER", div_champ: "CHAMPION"
+            }
+        };
+
+        function t(key) {
+            return TEXTS[playerData.language][key] || key;
+        }
+
         // --- CONSTANTES ---
-        const MAX_FLIGHT_HEIGHT = 80;
+        const MAX_FLIGHT_HEIGHT = 120; 
+
+        // --- DADOS DE ARENA ---
+        const ARENA_DIVISIONS = [
+            { id: "ABERTA I", min: 0, fare: 0 },
+            { id: "ABERTA II", min: 500, fare: 0 },
+            { id: "ABERTA III", min: 1000, fare: 0 },
+            { id: "ABERTA IV", min: 1500, fare: 0 },
+            { id: "COMPETIDOR I", min: 2000, fare: 10 },
+            { id: "COMPETIDOR II", min: 3000, fare: 20 },
+            { id: "COMPETIDOR III", min: 4000, fare: 30 },
+            { id: "CAMPEÃO I", min: 5000, fare: 40 },
+            { id: "CAMPEÃO II", min: 7000, fare: 50 },
+            { id: "CAMPEÃO III", min: 10000, fare: 60 }
+        ];
 
         // --- SISTEMA DE DADOS E ECONOMIA ---
         let playerData = {
             coins: 100,
+            arenaPoints: 0, 
             unlockedBirds: ['eagle'],
-            unlockedSkins: ['default'], // IDs globais de skins
+            unlockedSkins: ['default'],
+            birdUpgrades: {},
             bpLevel: 1,
-            bpExp: 0
+            bpExp: 0,
+            language: 'pt' // Default language
         };
 
-        if(localStorage.getItem('skyLordsSaveV3')) {
-            try { playerData = JSON.parse(localStorage.getItem('skyLordsSaveV3')); } catch(e) {}
+        if(localStorage.getItem('skyLordsSaveV5')) {
+            try { 
+                const loaded = JSON.parse(localStorage.getItem('skyLordsSaveV5')); 
+                playerData = { ...playerData, ...loaded };
+                if(!playerData.birdUpgrades) playerData.birdUpgrades = {};
+                if(playerData.arenaPoints === undefined) playerData.arenaPoints = 0;
+                if(!playerData.language) playerData.language = 'pt';
+            } catch(e) {}
         }
 
         // --- DADOS DO JOGO ---
         const BIRD_STATS = {
-            eagle:       { name: "Águia Real",   hp: 110, mana: 120, speed: 0.8, turn: 0.9, baseColor: 0xffaa00, price: 0,    desc: "Equilibrada. Habilidade: Empurrão Sônico.", abilityName: "Onda Sônica", abilityCD: 5, abilityType: 'push' },
-            falcon:      { name: "Falcão Veloz", hp: 80,  mana: 100, speed: 1.2, turn: 0.6, baseColor: 0x3366ff, price: 300,  desc: "Mergulho supersônico. Habilidade: Turbo.", abilityName: "Turbo", abilityCD: 8, abilityType: 'dash' },
-            zanholo:     { name: "Zanholo",      hp: 100, mana: 130, speed: 1.1, turn: 0.8, baseColor: 0x111111, price: 9999, desc: "Tucano do Passe. Ágil e exótico. Habilidade: Tropicália.", abilityName: "Tropicália", abilityCD: 8, abilityType: 'dash' },
-            owl:         { name: "Coruja Sábia", hp: 130, mana: 150, speed: 0.6, turn: 1.1, baseColor: 0xeeeeee, price: 500,  desc: "Silenciosa. Habilidade: Invisibilidade.", abilityName: "Furtividade", abilityCD: 10, abilityType: 'stealth' },
-            hummingbird: { name: "Beija-flor",   hp: 50,  mana: 200, speed: 0.9, turn: 1.5, baseColor: 0x00ffcc, price: 800,  desc: "Difícil de acertar. Habilidade: Cura Rápida.", abilityName: "Néctar", abilityCD: 12, abilityType: 'heal' },
-            vulture:     { name: "Abutre",       hp: 160, mana: 80,  speed: 0.7, turn: 0.7, baseColor: 0xaa4444, price: 600,  desc: "Tanque. Habilidade: Escudo de Ossos.", abilityName: "Escudo", abilityCD: 15, abilityType: 'shield' },
-            crow:        { name: "Corvo",        hp: 90,  mana: 140, speed: 0.85, turn: 1.2, baseColor: 0x222222, price: 1000, desc: "Sombrio. Habilidade: Teleporte.", abilityName: "Blink", abilityCD: 6, abilityType: 'teleport' },
-            phoenix:     { name: "Fênix",        hp: 120, mana: 180, speed: 0.9, turn: 0.8, baseColor: 0xff4500, price: 2500, desc: "Renascida. Habilidade: Explosão Solar.", abilityName: "Nova", abilityCD: 12, abilityType: 'nova' },
-            nagas:       { name: "Nagas",        hp: 300, mana: 300, speed: 1.0, turn: 1.0, baseColor: 0x4b0082, price: 10000, desc: "LENDÁRIO. O terror dos céus. Habilidade: Buraco Negro.", abilityName: "Vazio", abilityCD: 20, abilityType: 'void' }
+            eagle:       { nameKey: "bird_eagle_name",   hp: 110, mana: 120, speed: 0.8, turn: 0.9, baseColor: 0xffaa00, price: 0,    descKey: "bird_eagle_desc", abilKey: "bird_eagle_abil", abilityCD: 5, abilityType: 'push' },
+            falcon:      { nameKey: "bird_falcon_name", hp: 80,  mana: 100, speed: 1.2, turn: 0.6, baseColor: 0x3366ff, price: 300,  descKey: "bird_falcon_desc", abilKey: "bird_falcon_abil", abilityCD: 8, abilityType: 'dash' },
+            zanholo:     { nameKey: "bird_zanholo_name",      hp: 100, mana: 130, speed: 1.1, turn: 0.8, baseColor: 0x111111, price: 9999, descKey: "bird_zanholo_desc", abilKey: "bird_zanholo_abil", abilityCD: 8, abilityType: 'dash' },
+            owl:         { nameKey: "bird_owl_name", hp: 130, mana: 150, speed: 0.6, turn: 1.1, baseColor: 0xeeeeee, price: 500,  descKey: "bird_owl_desc", abilKey: "bird_owl_abil", abilityCD: 10, abilityType: 'stealth' },
+            hummingbird: { nameKey: "bird_hummingbird_name",   hp: 50,  mana: 200, speed: 0.9, turn: 1.5, baseColor: 0x00ffcc, price: 800,  descKey: "bird_hummingbird_desc", abilKey: "bird_hummingbird_abil", abilityCD: 12, abilityType: 'heal' },
+            vulture:     { nameKey: "bird_vulture_name",       hp: 160, mana: 80,  speed: 0.7, turn: 0.7, baseColor: 0xaa4444, price: 600,  descKey: "bird_vulture_desc", abilKey: "bird_vulture_abil", abilityCD: 15, abilityType: 'shield' },
+            crow:        { nameKey: "bird_crow_name",        hp: 90,  mana: 140, speed: 0.85, turn: 1.2, baseColor: 0x222222, price: 1000, descKey: "bird_crow_desc", abilKey: "bird_crow_abil", abilityCD: 6, abilityType: 'teleport' },
+            phoenix:     { nameKey: "bird_phoenix_name",        hp: 120, mana: 180, speed: 0.9, turn: 0.8, baseColor: 0xff4500, price: 2500, descKey: "bird_phoenix_desc", abilKey: "bird_phoenix_abil", abilityCD: 12, abilityType: 'nova' },
+            nagas:       { nameKey: "bird_nagas_name",        hp: 300, mana: 300, speed: 1.0, turn: 1.0, baseColor: 0x4b0082, price: 10000, descKey: "bird_nagas_desc", abilKey: "bird_nagas_abil", abilityCD: 20, abilityType: 'void' }
         };
 
-        // Verificação inicial de recompensas do passe
         if (playerData.bpLevel >= 1 && !playerData.unlockedBirds.includes('zanholo')) {
             playerData.unlockedBirds.push('zanholo');
         }
 
-        function saveGame() {
-            localStorage.setItem('skyLordsSaveV3', JSON.stringify(playerData));
-            const coinEl = document.getElementById('player-coins');
-            if(coinEl) coinEl.innerText = playerData.coins;
+        for(let bird of playerData.unlockedBirds) {
+            if(!playerData.birdUpgrades[bird]) {
+                playerData.birdUpgrades[bird] = { level: 1, hp: 0, mana: 0, speed: 0 };
+            }
         }
 
-        // Skins globais que podem ser aplicadas (se a lógica fosse complexa, seria por pássaro, aqui simplificamos para re-color)
+        function saveGame() {
+            localStorage.setItem('skyLordsSaveV5', JSON.stringify(playerData));
+            document.getElementById('player-coins').innerText = playerData.coins;
+            document.getElementById('arena-points-display').innerText = playerData.arenaPoints;
+        }
+
         const SKINS = {
-            default:   { name: "Padrão", price: 0, color: null }, // Null usa a cor base do pássaro
-            midnight:  { name: "Meia-Noite", price: 200, color: 0x111122 },
-            golden:    { name: "Dourado", price: 1000, color: 0xffd700 },
-            crimson:   { name: "Carmesim", price: 400, color: 0x990000 },
-            spectral:  { name: "Espectral", price: 800, color: 0xaaffff },
-            forest:    { name: "Camuflagem", price: 300, color: 0x2e4e2e },
-            neon:      { name: "Cyber Neon", price: 1500, color: 0xff00ff }
+            default:   { nameKey: "skin_default", price: 0, color: null },
+            midnight:  { nameKey: "skin_midnight", price: 200, color: 0x111122 },
+            golden:    { nameKey: "skin_golden", price: 1000, color: 0xffd700 },
+            crimson:   { nameKey: "skin_crimson", price: 400, color: 0x990000 },
+            spectral:  { nameKey: "skin_spectral", price: 800, color: 0xaaffff },
+            forest:    { nameKey: "skin_forest", price: 300, color: 0x2e4e2e },
+            neon:      { nameKey: "skin_neon", price: 1500, color: 0xff00ff }
+        };
+
+        const PASS_REWARDS = {
+            1: { type: 'bird', id: 'zanholo', labelKey: 'bird_zanholo_name' },
+            2: { type: 'skin', id: 'forest', labelKey: 'skin_forest' },
+            3: { type: 'coin', amount: 100, labelKey: 'reward_coins' },
+            4: { type: 'skin', id: 'midnight', labelKey: 'skin_midnight' },
+            5: { type: 'coin', amount: 100, labelKey: 'reward_coins' },
+            6: { type: 'skin', id: 'crimson', labelKey: 'skin_crimson' },
+            7: { type: 'coin', amount: 100, labelKey: 'reward_coins' },
+            8: { type: 'skin', id: 'spectral', labelKey: 'skin_spectral' },
+            9: { type: 'coin', amount: 100, labelKey: 'reward_coins' },
+            10: { type: 'skin', id: 'neon', labelKey: 'skin_neon' }
         };
 
         const MAP_TYPES = {
@@ -402,18 +783,20 @@
         let killCount = 0;
         let sessionCoins = 0;
         
+        let currentGameMode = 'casual'; 
+        let currentDivision = 0;
+        let arenaSessionStats = { kills: 0, placementPoints: 0, farePaid: 0, rankTop25: false, rankTop10: false };
+
         const raycaster = new THREE.Raycaster();
         const screenCenter = new THREE.Vector2(0, 0);
         const keys = { w: false, s: false, a: false, d: false, space: false, q: false };
         
-        // --- FACTORY (ATUALIZADA PARA SKINS) ---
+        // --- FACTORY ---
         class BirdFactory {
             static create(type, skinKey = 'default') {
                 const group = new THREE.Group();
                 const stats = BIRD_STATS[type];
                 const skin = SKINS[skinKey];
-                
-                // Cor final: Se a skin tiver cor definida, usa ela. Se não, usa a cor base da classe.
                 const finalColor = skin && skin.color !== null ? skin.color : stats.baseColor;
 
                 const matBody = new THREE.MeshStandardMaterial({ color: finalColor, roughness: 0.6, flatShading: true });
@@ -422,8 +805,6 @@
                 const matWhite = new THREE.MeshStandardMaterial({ color: 0xffffff });
                 const matBlack = new THREE.MeshBasicMaterial({ color: 0x000000 });
                 const matGlow = new THREE.MeshBasicMaterial({ color: finalColor }); 
-
-                // Material especial para o bico do Zanholo
                 const matBeakGreen = new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.4 });
 
                 let bodyGeo, wingGeo;
@@ -438,9 +819,7 @@
                     bodyGeo = new THREE.CylinderGeometry(0.4, 0.2, 4, 8);
                     wingGeo = new THREE.BoxGeometry(3, 0.1, 1.5);
                 } else if (type === 'zanholo') {
-                    // Corpo robusto de tucano (Cápsula)
                     bodyGeo = new THREE.CapsuleGeometry(0.45, 0.9, 4, 8);
-                    // Asas mais proporcionais
                     wingGeo = new THREE.BoxGeometry(2.2, 0.1, 1.0);
                 } else {
                     bodyGeo = new THREE.ConeGeometry(0.5, 2, 7);
@@ -463,71 +842,48 @@
                 if(type === 'nagas') headPosZ = 2.2; 
                 else if(type === 'hummingbird') headPosZ = 0.4;
                 else if(type === 'vulture') headPosZ = 0.6;
-                else if(type === 'zanholo') headPosZ = 0.6; // Ajuste para o corpo de capsula
+                else if(type === 'zanholo') headPosZ = 0.6;
 
                 headGroup.position.set(0, 0.3, headPosZ);
                 group.add(headGroup);
 
-                // Olhos e Máscara
+                // Olhos
                 const eyeL = new THREE.Group();
-                
-                // Máscara branca ao redor do olho (típico de tucano)
                 if (type === 'zanholo') {
                     const mask = new THREE.Mesh(new THREE.CircleGeometry(0.18, 12), matWhite);
-                    mask.rotation.y = -Math.PI / 2; // Virado para a lateral
-                    mask.position.x = -0.01; // Levemente para fora do olho
+                    mask.rotation.y = -Math.PI / 2; 
+                    mask.position.x = -0.01; 
                     eyeL.add(mask);
                 }
-
                 const scleraL = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 6), matWhite);
                 const pupilL = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), (type === 'nagas') ? matGlow : matBlack);
                 pupilL.position.z = 0.08;
                 eyeL.add(scleraL, pupilL);
                 eyeL.position.set(0.2, 0.1, 0.2);
-                
                 const eyeR = eyeL.clone();
-                // Espelhar a máscara se for Zanholo
-                if (type === 'zanholo') {
-                    eyeR.children[0].rotation.y = Math.PI / 2;
-                }
+                if (type === 'zanholo') eyeR.children[0].rotation.y = Math.PI / 2;
                 eyeR.position.set(-0.2, 0.1, 0.2);
-                
                 headGroup.add(eyeL, eyeR);
 
                 // Bico
                 let beakMesh;
                 if (type === 'zanholo') {
-                    // Bico de Tucano Gigante e Curvo
-                    // Usamos BoxGeometry com manipulação de vértices para criar a curva
                     const beakGeo = new THREE.BoxGeometry(0.25, 0.5, 1.5);
                     const pos = beakGeo.attributes.position;
-                    
-                    // Manipulação manual dos vértices para criar a forma de "banana"
                     for(let i=0; i<pos.count; i++){
                         const z = pos.getZ(i);
                         const y = pos.getY(i);
                         const x = pos.getX(i);
-
-                        // Se é a parte da frente (ponta do bico)
                         if (z > 0.5) {
-                            // Afunilar (taper)
                             pos.setX(i, x * 0.2); 
-                            
-                            // Curvar para baixo
                             pos.setY(i, y * 0.3 - 0.4); 
-                        } 
-                        // Parte do meio
-                        else if (z > -0.5) {
-                            // Curva suave superior
-                            if (y > 0) {
-                                pos.setY(i, y + (z * 0.1)); // Arqueia um pouco o topo
-                            }
+                        } else if (z > -0.5) {
+                            if (y > 0) pos.setY(i, y + (z * 0.1)); 
                         }
                     }
                     beakGeo.computeVertexNormals();
-                    
                     beakMesh = new THREE.Mesh(beakGeo, matBeakGreen);
-                    beakMesh.position.set(0, -0.1, 0.9); // Pra frente
+                    beakMesh.position.set(0, -0.1, 0.9); 
                 } else {
                     let beakLen = type === 'hummingbird' ? 1.0 : 0.5;
                     beakMesh = new THREE.Mesh(new THREE.ConeGeometry(0.08, beakLen, 4), matBeak);
@@ -543,44 +899,30 @@
                 wingMeshL.position.x = wingGeo.parameters.width / 2; 
                 wingLGroup.add(wingMeshL);
                 wingLGroup.position.set(0.2, 0.2, 0.2);
-                
                 const wingRGroup = new THREE.Group();
                 const wingMeshR = new THREE.Mesh(wingGeo, (type==='crow') ? matBlack : matBody);
                 wingMeshR.position.x = -wingGeo.parameters.width / 2;
                 wingRGroup.add(wingMeshR);
                 wingRGroup.position.set(-0.2, 0.2, 0.2);
-
                 if (type === 'nagas') {
                     wingLGroup.position.z = -0.5;
                     wingRGroup.position.z = -0.5;
                 }
-
                 group.add(wingLGroup, wingRGroup);
                 wings.push(wingLGroup, wingRGroup);
 
                 // Cauda
                 let tailGeo;
-                if (type === 'zanholo') {
-                    // Cauda de tucano (longa e retangular)
-                    tailGeo = new THREE.BoxGeometry(0.6, 0.1, 1.2);
-                } else {
-                    tailGeo = new THREE.CylinderGeometry(0.1, 0.6, 1, 3);
-                }
-
+                if (type === 'zanholo') tailGeo = new THREE.BoxGeometry(0.6, 0.1, 1.2);
+                else tailGeo = new THREE.CylinderGeometry(0.1, 0.6, 1, 3);
                 const tailG = new THREE.Mesh(tailGeo, matSec);
-                
                 if (type !== 'zanholo') {
                     tailG.rotation.x = -Math.PI / 2;
                     tailG.scale.z = 0.1;
                 }
-                
                 tailG.position.set(0, 0, -1.2);
-                
                 if (type === 'nagas') tailG.position.set(0, 0, -2.2);
-                else if (type === 'zanholo') {
-                    tailG.position.set(0, 0, -0.9); // Ajuste da cauda do tucano
-                }
-                
+                else if (type === 'zanholo') tailG.position.set(0, 0, -0.9);
                 group.add(tailG);
 
                 if (type === 'phoenix') {
@@ -593,14 +935,14 @@
             }
         }
 
-        // --- GAME WORLD (COLISÃO MANTIDA) ---
+        // --- GAME WORLD ---
         class GameWorld {
             constructor(mapKey) {
                 this.config = MAP_TYPES[mapKey];
                 this.stormRadius = 800;
                 this.maxRadius = 800;
                 this.noise = new ImprovedNoise();
-                
+                this.colliders = []; 
                 this.initEnvironment();
                 this.initTerrain();
                 this.initStorm();
@@ -632,6 +974,27 @@
                 return h;
             }
 
+            checkCollision(pos, radius) {
+                for (let c of this.colliders) {
+                    if (c.type === 'cylinder') {
+                        if (pos.y >= c.yMin && pos.y <= c.yMax) {
+                            const dx = pos.x - c.x;
+                            const dz = pos.z - c.z;
+                            const distSq = dx*dx + dz*dz;
+                            const minDist = c.radius + radius;
+                            if (distSq < minDist * minDist) return true;
+                        }
+                    } else if (c.type === 'box') {
+                        if (pos.x >= c.minX - radius && pos.x <= c.maxX + radius &&
+                            pos.y >= c.minY - radius && pos.y <= c.maxY + radius &&
+                            pos.z >= c.minZ - radius && pos.z <= c.maxZ + radius) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
             initTerrain() {
                 const geo = new THREE.PlaneGeometry(2400, 2400, 128, 128);
                 const pos = geo.attributes.position;
@@ -658,17 +1021,22 @@
                 const rockGeo = new THREE.DodecahedronGeometry(5);
                 const iceSpikeGeo = new THREE.ConeGeometry(3, 25, 4);
                 
+                const giantTreeTrunk = new THREE.CylinderGeometry(15, 20, 120, 10);
+                const giantTreeTop = new THREE.ConeGeometry(60, 100, 10);
+                const mesaGeo = new THREE.CylinderGeometry(60, 80, 80, 7);
+                const giantCrystalGeo = new THREE.ConeGeometry(30, 120, 5);
+
                 const trunkMat = new THREE.MeshStandardMaterial({color: 0x5c4033, flatShading:true});
                 const leavesMat = new THREE.MeshStandardMaterial({color: 0x2e7d32, flatShading:true});
                 const cactusMat = new THREE.MeshStandardMaterial({color: 0x4caf50, flatShading:true});
                 const rockMat = new THREE.MeshStandardMaterial({color: 0x757575, flatShading:true});
                 const iceMat = new THREE.MeshStandardMaterial({color: 0xe1f5fe, flatShading:true, transparent:true, opacity:0.9});
                 
-                // Estruturas
                 const woodMat = new THREE.MeshStandardMaterial({color: 0x8b4513, flatShading:true});
                 const roofMat = new THREE.MeshStandardMaterial({color: 0x5d4037, flatShading:true});
                 const sandMat = new THREE.MeshStandardMaterial({color: 0xe6ddc0, flatShading:true});
                 const snowMat = new THREE.MeshStandardMaterial({color: 0xffffff, flatShading:true});
+                const mesaMat = new THREE.MeshStandardMaterial({color: 0x8d6e63, flatShading:true});
 
                 for(let i=0; i<count; i++) {
                     const angle = Math.random() * Math.PI * 2;
@@ -679,35 +1047,54 @@
                     let obs;
                     const h = this.getTerrainHeight(x, z);
 
-                    // Chance de 4% de ser uma estrutura
-                    if (Math.random() < 0.04) {
+                    if (Math.random() < 0.01) {
                         obs = new THREE.Group();
                         if (this.config.type === 'woods') {
-                            // Cabana
+                            const tr = new THREE.Mesh(giantTreeTrunk, trunkMat);
+                            tr.position.y = 60;
+                            const tp = new THREE.Mesh(giantTreeTop, leavesMat);
+                            tp.position.y = 110;
+                            obs.add(tr, tp);
+                            this.colliders.push({type:'cylinder', x:x, z:z, yMin:h, yMax:h+160, radius:25});
+                        } else if (this.config.type === 'desert') {
+                            obs = new THREE.Mesh(mesaGeo, mesaMat);
+                            obs.position.y = 40;
+                            this.colliders.push({type:'cylinder', x:x, z:z, yMin:h, yMax:h+80, radius:80});
+                        } else {
+                            obs = new THREE.Mesh(giantCrystalGeo, iceMat);
+                            obs.position.y = 50;
+                            obs.rotation.z = (Math.random() - 0.5) * 0.5;
+                            this.colliders.push({type:'cylinder', x:x, z:z, yMin:h, yMax:h+120, radius:30});
+                        }
+                    } 
+                    else if (Math.random() < 0.04) {
+                        obs = new THREE.Group();
+                        let size = 10;
+                        if (this.config.type === 'woods') {
                             const body = new THREE.Mesh(new THREE.BoxGeometry(10, 8, 10), woodMat);
                             body.position.y = 4;
                             const roof = new THREE.Mesh(new THREE.ConeGeometry(9, 6, 4), roofMat);
                             roof.position.y = 11;
-                            roof.rotation.y = Math.PI / 4; // Pirâmide
+                            roof.rotation.y = Math.PI / 4;
                             obs.add(body, roof);
+                            this.colliders.push({type:'box', minX:x-6, maxX:x+6, minY:h, maxY:h+20, minZ:z-6, maxZ:z+6});
                         } else if (this.config.type === 'desert') {
-                            // Casa de deserto
                             const body = new THREE.Mesh(new THREE.BoxGeometry(10, 8, 10), sandMat);
                             body.position.y = 4;
                             const roof = new THREE.Mesh(new THREE.BoxGeometry(11, 1, 11), roofMat);
                             roof.position.y = 8.5;
                             obs.add(body, roof);
+                            this.colliders.push({type:'box', minX:x-6, maxX:x+6, minY:h, maxY:h+15, minZ:z-6, maxZ:z+6});
                         } else {
-                            // Iglu
                             const dome = new THREE.Mesh(new THREE.SphereGeometry(7, 8, 6, 0, Math.PI*2, 0, Math.PI/2), snowMat);
                             dome.scale.y = 0.8;
                             dome.position.y = 0;
                             const tunnel = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 6), snowMat);
                             tunnel.position.set(0, 2, 6);
                             obs.add(dome, tunnel);
+                            this.colliders.push({type:'box', minX:x-8, maxX:x+8, minY:h, maxY:h+10, minZ:z-8, maxZ:z+8});
                         }
                     } else {
-                        // Cenário padrão
                         if (this.config.type === 'woods') {
                             if(Math.random() > 0.2) {
                                 obs = new THREE.Group();
@@ -716,33 +1103,26 @@
                                 const top = new THREE.Mesh(treeTopGeo, leavesMat);
                                 top.position.y = 15;
                                 obs.add(trunk, top);
-                                obs.position.y = -2; 
+                                obs.position.y = -2;
+                                this.colliders.push({type:'cylinder', x:x, z:z, yMin:h, yMax:h+25, radius:4});
                             } else {
                                 obs = new THREE.Mesh(rockGeo, rockMat);
                                 obs.position.y = 3;
+                                this.colliders.push({type:'cylinder', x:x, z:z, yMin:h, yMax:h+8, radius:5});
                             }
                         } else if (this.config.type === 'desert') {
                             obs = Math.random() > 0.3 ? new THREE.Mesh(cactusGeo, cactusMat) : new THREE.Mesh(rockGeo, rockMat);
                             obs.position.y = 7;
+                            this.colliders.push({type:'cylinder', x:x, z:z, yMin:h, yMax:h+15, radius:3});
                         } else {
                             obs = Math.random() > 0.5 ? new THREE.Mesh(iceSpikeGeo, iceMat) : new THREE.Mesh(rockGeo, iceMat);
                             obs.position.y = 5;
+                            this.colliders.push({type:'cylinder', x:x, z:z, yMin:h, yMax:h+25, radius:4});
                         }
                     }
-                    
                     if(obs) {
-                        obs.position.x = x; 
-                        obs.position.z = z;
-                        obs.position.y += h; 
-                        
-                        // Propagar sombra para grupos
-                        obs.traverse(c => {
-                            if (c.isMesh) {
-                                c.castShadow = true;
-                                c.receiveShadow = true;
-                            }
-                        });
-                        
+                        obs.position.x = x; obs.position.z = z; obs.position.y += h; 
+                        obs.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
                         scene.add(obs);
                     }
                 }
@@ -781,14 +1161,26 @@
                 const playerDist = new THREE.Vector2(player.position.x, player.position.z).length();
                 const warning = document.getElementById('storm-warning');
                 warning.style.display = (playerDist > this.stormRadius - 50) ? 'block' : 'none';
-                warning.innerText = playerDist > this.stormRadius ? "VOCÊ ESTÁ NA TEMPESTADE!" : "FUJA DA TEMPESTADE!";
+                warning.innerText = playerDist > this.stormRadius ? t('hud_storm') : t('hud_storm_safe');
             }
         }
 
         // --- ENTIDADES ---
         class Entity {
             constructor(type, isPlayer, skinKey = 'default') {
+                this.type = type;
                 this.stats = {...BIRD_STATS[type]};
+                
+                if (isPlayer) {
+                    const progress = playerData.birdUpgrades[type] || { level: 1, hp: 0, mana: 0, speed: 0 };
+                    this.stats.hp *= (1 + (progress.hp * 0.1));
+                    this.stats.mana *= (1 + (progress.mana * 0.1));
+                    this.stats.speed *= (1 + (progress.speed * 0.05));
+                    this.level = progress.level;
+                } else {
+                    this.level = 1;
+                }
+
                 this.maxHp = this.stats.hp;
                 this.maxMana = this.stats.mana;
                 this.isPlayer = isPlayer;
@@ -830,6 +1222,15 @@
                     if (this.lastHitter === player) {
                         killCount++;
                         sessionCoins += 20; 
+                        
+                        if(currentGameMode === 'arena') {
+                            arenaSessionStats.kills++;
+                            player.stats.hp = Math.min(player.maxHp, player.stats.hp + 50);
+                            player.stats.mana = Math.min(player.maxMana, player.stats.mana + 50);
+                            showArenaNotif("+50 HP/MANA | +20 PTS");
+                            updateHUD();
+                        }
+
                         document.getElementById('kill-count').innerText = killCount;
                         document.getElementById('session-coins').innerText = sessionCoins;
                     }
@@ -863,7 +1264,13 @@
                         dir = new THREE.Vector3(0,0,1).applyEuler(this.rotation).normalize();
                     }
                 }
-                projectiles.push({ mesh, dir, owner: this, life: 3, damage: 35 });
+                
+                let dmg = 35;
+                if (this.level > 1) {
+                    dmg *= (1 + (this.level - 1) * 0.1);
+                }
+
+                projectiles.push({ mesh, dir, owner: this, life: 3, damage: dmg });
                 scene.add(mesh);
             }
 
@@ -981,6 +1388,16 @@
                 const desiredVel = forward.multiplyScalar(acceleration);
                 this.velocity.lerp(desiredVel, 2 * dt);
 
+                const nextPos = this.position.clone().addScaledVector(this.velocity, dt);
+                
+                if (world && world.checkCollision(nextPos, 2)) {
+                    this.velocity.set(0, 0, 0); 
+                    const bounce = new THREE.Vector3(0,0,-5).applyEuler(this.rotation);
+                    this.position.add(bounce.multiplyScalar(dt));
+                } else {
+                    this.position.copy(nextPos);
+                }
+
                 if (world) {
                     const terrainH = world.getTerrainHeight(this.position.x, this.position.z);
                     const safeH = terrainH + 5; 
@@ -1001,8 +1418,6 @@
                 } else {
                     warning.style.display = 'none';
                 }
-
-                this.position.addScaledVector(this.velocity, dt);
 
                 const camOffset = new THREE.Vector3(0, 0, -12);
                 camOffset.applyEuler(new THREE.Euler(this.pitch, this.yaw, 0, 'YXZ'));
@@ -1069,13 +1484,12 @@
                         
                         if (lookDir.dot(myDir) > 0.7) { 
                             const aimDir = new THREE.Vector3().subVectors(closest.position, this.position).normalize();
-                            // Aumentado drasticamente a imprecisão de 0.15 para 0.5
-                            const inaccuracy = 0.5; 
+                            const inaccuracy = 0.8; 
                             aimDir.x += (Math.random() - 0.5) * inaccuracy;
                             aimDir.y += (Math.random() - 0.5) * inaccuracy;
                             aimDir.z += (Math.random() - 0.5) * inaccuracy;
                             this.fire(aimDir);
-                            this.attackCooldown = 0.5 + Math.random() * 0.8; 
+                            this.attackCooldown = 1.5 + Math.random() * 2.0; 
                         }
                     }
 
@@ -1100,7 +1514,14 @@
                 this.rotation.z = THREE.MathUtils.lerp(this.rotation.z, -yawDiff * 0.5, 3 * dt);
 
                 const forward = new THREE.Vector3(0,0,1).applyEuler(this.rotation);
-                this.position.addScaledVector(forward, this.stats.speed * speedMult * dt);
+                const nextPos = this.position.clone().addScaledVector(forward, this.stats.speed * speedMult * dt);
+                
+                if (world && world.checkCollision(nextPos, 4)) {
+                    this.velocity.set(0,0,0);
+                    this.changeTarget(); 
+                } else {
+                    this.position.copy(nextPos);
+                }
 
                 if (world) {
                     const terrainH = world.getTerrainHeight(this.position.x, this.position.z);
@@ -1135,6 +1556,14 @@
         }
 
         // --- SISTEMAS GERAIS ---
+        function showArenaNotif(msg) {
+            const el = document.getElementById('arena-notification');
+            el.innerText = msg;
+            el.style.opacity = 1;
+            el.style.animation = 'pop 0.5s ease-out';
+            setTimeout(() => { el.style.opacity = 0; el.style.animation = ''; }, 2000);
+        }
+
         function updateProjectiles(dt) {
             const HIT_RADIUS_PLAYER = 4.5;
             for(let i = projectiles.length-1; i>=0; i--) {
@@ -1144,6 +1573,12 @@
 
                 const terrainH = world.getTerrainHeight(p.mesh.position.x, p.mesh.position.z);
                 if (p.mesh.position.y < terrainH) {
+                    scene.remove(p.mesh);
+                    projectiles.splice(i, 1);
+                    continue;
+                }
+                
+                if (world.checkCollision(p.mesh.position, 1)) {
                     scene.remove(p.mesh);
                     projectiles.splice(i, 1);
                     continue;
@@ -1185,7 +1620,7 @@
                 abBox.innerText = Math.ceil(player.abilityTimer) + "s";
                 abBox.style.color = "#888";
             } else {
-                abBox.innerText = "PRONTO";
+                abBox.innerText = t('hud_ready');
                 abBox.style.color = "#0f0";
             }
         }
@@ -1193,6 +1628,20 @@
         function updateAliveCount() {
             const count = bots.filter(b => !b.dead).length + (player.dead ? 0 : 1);
             document.getElementById('alive-count').innerText = count;
+            
+            if (currentGameMode === 'arena' && !player.dead) {
+                if (count <= 25 && !arenaSessionStats.rankTop25) {
+                    arenaSessionStats.rankTop25 = true;
+                    arenaSessionStats.placementPoints += 60;
+                    showArenaNotif("TOP 25! +60 PTS");
+                }
+                if (count <= 10 && !arenaSessionStats.rankTop10) {
+                    arenaSessionStats.rankTop10 = true;
+                    arenaSessionStats.placementPoints += 30;
+                    showArenaNotif("TOP 10! +30 PTS");
+                }
+            }
+
             if(count === 1 && !player.dead) endGame(true);
         }
 
@@ -1203,28 +1652,49 @@
             const scr = document.getElementById('game-over-screen');
             scr.style.display = 'flex';
             
-            if(victory) sessionCoins += 100;
+            if(victory && currentGameMode === 'casual') sessionCoins += 100;
             
+            if(currentGameMode === 'arena') {
+                if(victory) arenaSessionStats.placementPoints += 100;
+                
+                const killPts = arenaSessionStats.kills * 20;
+                const totalPts = killPts + arenaSessionStats.placementPoints - arenaSessionStats.farePaid;
+                
+                playerData.arenaPoints += totalPts;
+                if(playerData.arenaPoints < 0) playerData.arenaPoints = 0;
+
+                document.getElementById('arena-results-box').style.display = 'block';
+                document.getElementById('res-bus').innerText = "-" + arenaSessionStats.farePaid;
+                document.getElementById('res-kills').innerText = "+" + killPts;
+                document.getElementById('res-place').innerText = "+" + arenaSessionStats.placementPoints;
+                document.getElementById('res-total').innerText = (totalPts >= 0 ? "+" : "") + totalPts;
+                
+                calculateDivision();
+            } else {
+                document.getElementById('arena-results-box').style.display = 'none';
+            }
+
             if (playerData) {
                 playerData.coins += sessionCoins;
-                playerData.bpExp += 20; // XP do passe
+                playerData.bpExp += 20; 
                 if (playerData.bpExp >= 100) {
                     playerData.bpExp = 0;
                     playerData.bpLevel++;
                 }
                 
-                // Verificar se desbloqueou Zanholo ao subir de nível
                 if (playerData.bpLevel >= 1 && !playerData.unlockedBirds.includes('zanholo')) {
                     playerData.unlockedBirds.push('zanholo');
+                    if(!playerData.birdUpgrades['zanholo']) 
+                        playerData.birdUpgrades['zanholo'] = { level: 1, hp: 0, mana: 0, speed: 0 };
                 }
                 
                 saveGame();
             }
 
             document.getElementById('earned-coins').innerText = sessionCoins;
-            document.getElementById('go-title').innerText = victory ? "LENDA DOS CÉUS" : "ABATIDO";
+            document.getElementById('go-title').innerText = victory ? t('go_title_win') : t('go_title_lose');
             document.getElementById('go-title').style.color = victory ? "#00ffcc" : "#ff3333";
-            document.getElementById('go-msg').innerText = victory ? "Vitória Royale!" : "Tente novamente.";
+            document.getElementById('go-msg').innerText = victory ? t('go_msg_win') : t('go_msg_lose');
         }
 
         window.returnToLobby = function() {
@@ -1235,24 +1705,124 @@
             initLobby();
         };
 
-        // --- LOBBY LOGIC (ATUALIZADO) ---
         let lobbyBird;
         let lobbyParticles;
+        let targetCamZ = 6;
+        let targetCamY = 1;
+
+        window.openSettings = function() {
+            document.getElementById('settings-modal').style.display = 'flex';
+        };
+
+        window.closeSettings = function() {
+            document.getElementById('settings-modal').style.display = 'none';
+        };
+
+        window.setLanguage = function(lang) {
+            playerData.language = lang;
+            saveGame();
+            updateLanguageUI();
+        };
+
+        function updateLanguageUI() {
+            const lang = playerData.language;
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('lang-' + lang).classList.add('active');
+
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const k = el.getAttribute('data-key');
+                if (TEXTS[lang][k]) el.innerText = TEXTS[lang][k];
+            });
+
+            if(document.getElementById('page-locker').classList.contains('active')) renderLocker();
+            if(document.getElementById('page-upgrade').classList.contains('active')) renderUpgradePage();
+            if(document.getElementById('page-pass').classList.contains('active')) renderPass();
+            updateLobbyBird(); 
+        }
 
         window.switchTab = function(tab) {
-            // UI
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active'));
             
-            event.target.classList.add('active');
+            const btns = document.querySelectorAll('.nav-btn');
+            if(tab === 'home') btns[0].classList.add('active');
+            else if(tab === 'locker') btns[1].classList.add('active');
+            else if(tab === 'upgrade') btns[2].classList.add('active');
+            else if(tab === 'pass') btns[3].classList.add('active');
+
             document.getElementById('page-'+tab).classList.add('active');
 
-            // Lógica
-            if(tab === 'pass') {
-                renderPass();
-            } else if (tab === 'locker') {
-                renderLocker();
+            if(tab === 'locker' || tab === 'pass' || tab === 'upgrade') {
+                targetCamZ = 4; targetCamY = 0.5;
+            } else {
+                targetCamZ = 6; targetCamY = 1;
             }
+
+            if(tab === 'pass') renderPass();
+            else if (tab === 'locker') renderLocker();
+            else if (tab === 'upgrade') renderUpgradePage();
+
+            if (tab === 'home') {
+                const hasBird = playerData.unlockedBirds.includes(selectedBirdKey);
+                const hasSkin = playerData.unlockedSkins.includes(selectedSkinKey);
+                
+                if (!hasBird || !hasSkin) {
+                    if (!hasBird) selectedBirdKey = playerData.unlockedBirds[0];
+                    selectedSkinKey = 'default'; 
+                    updateLobbyBird();
+                }
+                updateLobbyBird(); 
+            }
+        }
+
+        window.setGameMode = function(mode, el) {
+            currentGameMode = mode;
+            document.querySelectorAll('.mode-option').forEach(e => e.classList.remove('active'));
+            el.classList.add('active');
+            
+            const info = document.getElementById('arena-details');
+            if(mode === 'arena') {
+                info.style.display = 'block';
+                calculateDivision(); 
+            } else {
+                info.style.display = 'none';
+            }
+        }
+
+        function calculateDivision() {
+            let divIdx = 0;
+            for(let i=0; i<ARENA_DIVISIONS.length; i++) {
+                if(playerData.arenaPoints >= ARENA_DIVISIONS[i].min) {
+                    divIdx = i;
+                }
+            }
+            currentDivision = divIdx;
+            const divData = ARENA_DIVISIONS[divIdx];
+            let divNameBase = divData.id.split(' ')[0]; 
+            let divRoman = divData.id.split(' ')[1]; 
+            
+            let translatedName = divNameBase;
+            if(divNameBase === 'ABERTA') translatedName = t('div_open');
+            else if(divNameBase === 'COMPETIDOR') translatedName = t('div_contender');
+            else if(divNameBase === 'CAMPEÃO') translatedName = t('div_champ');
+
+            document.getElementById('arena-division').innerText = translatedName + " " + divRoman;
+            document.getElementById('bus-fare').innerText = divData.fare;
+            document.getElementById('arena-points-display').innerText = playerData.arenaPoints;
+        }
+
+        window.updateBirdRotation = function(val) {
+            if(lobbyBird) lobbyBird.rotation.y = parseFloat(val);
+        }
+
+        window.previewReward = function(type, id) {
+            if(type === 'bird') {
+                selectedBirdKey = id;
+                selectedSkinKey = 'default';
+            } else if (type === 'skin') {
+                selectedSkinKey = id;
+            }
+            updateLobbyBird();
         }
 
         function renderPass() {
@@ -1263,37 +1833,33 @@
                 const claimed = i < playerData.bpLevel;
                 const locked = i > playerData.bpLevel;
                 const current = i === playerData.bpLevel;
-                
-                const isZanholo = (i === 1);
-                let rewardIcon = '💰';
-                let rewardLabel = '100 MOEDAS';
-                
-                if (isZanholo) {
-                    rewardIcon = '🦜';
-                    rewardLabel = 'ZANHOLO (PÁSSARO)';
-                } else if (i === 10) {
-                    rewardIcon = '👑';
-                    rewardLabel = 'SKIN LENDÁRIA';
-                } else if (i % 2 === 0) {
-                    rewardIcon = '🎨';
-                    rewardLabel = 'SKIN RARA';
-                }
+                const reward = PASS_REWARDS[i];
 
                 const tier = document.createElement('div');
                 tier.className = `pass-tier ${claimed ? 'claimed' : ''} ${locked ? 'locked' : ''}`;
+                
+                let icon = '❓';
+                if(reward.type === 'coin') icon = '💰';
+                else if(reward.type === 'skin') icon = '🎨';
+                else if(reward.type === 'bird') icon = '🦜';
+
                 tier.innerHTML = `
                     <div class="tier-num">${i}</div>
-                    <div class="tier-reward">${rewardIcon}</div>
-                    <div class="tier-label">${rewardLabel}</div>
-                    ${current ? '<div style="margin-top:auto; font-size:10px; color:#0f0">ATUAL</div>' : ''}
+                    <div class="tier-reward">${icon}</div>
+                    <div class="tier-label">${t(reward.labelKey) || reward.id}</div>
+                    ${current ? `<div style="margin-top:auto; font-size:10px; color:#0f0">${t('pass_current')}</div>` : ''}
                 `;
+                
+                if(reward.type === 'bird' || reward.type === 'skin') {
+                    tier.onclick = () => previewReward(reward.type, reward.id);
+                }
+
                 track.appendChild(tier);
             }
             document.getElementById('bp-level').innerText = playerData.bpLevel;
         }
 
         function renderLocker() {
-            // Lista de Pássaros (Classes)
             const listB = document.getElementById('locker-bird-list');
             listB.innerHTML = '';
             
@@ -1306,28 +1872,32 @@
                 
                 let buttonHtml = '';
                 if (!unlocked) {
-                    // Se for Zanholo, mostrar que é do passe
                     if (key === 'zanholo') {
-                        buttonHtml = '<span style="font-size:10px;color:#ffcc00">NO PASSE</span>';
+                        buttonHtml = `<span style="font-size:10px;color:#ffcc00">${t('btn_pass_in')}</span>`;
                     } else {
                         buttonHtml = `<button class="price-btn" onclick="buyBird('${key}', ${b.price})">💰 ${b.price}</button>`;
                     }
                 } else {
-                    buttonHtml = '<span style="font-size:10px;color:#0f0">ADQUIRIDO</span>';
+                    buttonHtml = `<span style="font-size:10px;color:#0f0">${t('btn_owned')}</span>`;
                 }
 
                 div.innerHTML = `
                     <div>
-                        <div style="font-weight:bold; font-size:16px">${b.name}</div>
+                        <div style="font-weight:bold; font-size:16px">${t(b.nameKey)}</div>
                         ${buttonHtml}
                     </div>
                     <div class="bird-icon" style="background:${'#'+b.baseColor.toString(16)}">${key[0].toUpperCase()}</div>
                 `;
-                div.onclick = (e) => { if(e.target.tagName !== 'BUTTON') selectBird(key); };
+                div.onclick = (e) => { 
+                    if(e.target.tagName !== 'BUTTON') {
+                        selectedBirdKey = key;
+                        renderLocker();
+                        updateLobbyBird();
+                    }
+                };
                 listB.appendChild(div);
             }
 
-            // Lista de Skins
             const listS = document.getElementById('locker-skin-list');
             listS.innerHTML = '';
 
@@ -1339,29 +1909,135 @@
                 div.className = 'skin-card' + (key === selectedSkinKey ? ' active' : '') + (!unlocked ? ' locked' : '');
                 div.innerHTML = `
                     <div>
-                        <div style="font-weight:bold; font-size:16px">${s.name}</div>
-                        ${!unlocked ? `<button class="price-btn" onclick="buySkin('${key}', ${s.price})">💰 ${s.price}</button>` : '<span style="font-size:10px;color:#0f0">ADQUIRIDO</span>'}
+                        <div style="font-weight:bold; font-size:16px">${t(s.nameKey)}</div>
+                        ${!unlocked ? `<button class="price-btn" onclick="buySkin('${key}', ${s.price})">💰 ${s.price}</button>` : `<span style="font-size:10px;color:#0f0">${t('btn_owned')}</span>`}
                     </div>
                     <div class="bird-icon" style="background:${s.color ? '#'+s.color.toString(16) : '#fff'}"></div>
                 `;
-                div.onclick = (e) => { if(e.target.tagName !== 'BUTTON') selectSkin(key); };
+                div.onclick = (e) => { 
+                    if(e.target.tagName !== 'BUTTON') {
+                        selectedSkinKey = key;
+                        renderLocker();
+                        updateLobbyBird();
+                    }
+                };
                 listS.appendChild(div);
             }
 
             const statsPanel = document.getElementById('skin-stats-panel');
             const s = BIRD_STATS[selectedBirdKey];
             statsPanel.innerHTML = `
-                <div style="font-size:12px; color:#aaa">CLASSE SELECIONADA</div>
-                <h3 style="margin:0 0 10px 0; color:${'#'+s.baseColor.toString(16)}">${s.name}</h3>
-                <p style="font-size:12px; color:#ccc">${s.desc}</p>
-                <div style="margin-top:5px;">HABILIDADE: <b style="color:#ffcc00">${s.abilityName}</b></div>
+                <div style="font-size:12px; color:#aaa">${t('sel_class')}</div>
+                <h3 style="margin:0 0 10px 0; color:${'#'+s.baseColor.toString(16)}">${t(s.nameKey)}</h3>
+                <p style="font-size:12px; color:#ccc">${t(s.descKey)}</p>
+                <div style="margin-top:5px;">HABILIDADE: <b style="color:#ffcc00">${t(s.abilKey)}</b></div>
             `;
         }
+
+        function renderUpgradePage() {
+            const list = document.getElementById('upgrade-bird-list');
+            list.innerHTML = '';
+
+            for(let key of playerData.unlockedBirds) {
+                const b = BIRD_STATS[key];
+                const div = document.createElement('div');
+                div.className = 'bird-card' + (key === selectedBirdKey ? ' active' : '');
+                div.innerHTML = `
+                    <div style="font-weight:bold; font-size:16px">${t(b.nameKey)}</div>
+                    <div class="bird-icon" style="background:${'#'+b.baseColor.toString(16)}">${key[0].toUpperCase()}</div>
+                `;
+                div.onclick = () => {
+                    selectedBirdKey = key;
+                    renderUpgradePage();
+                    updateLobbyBird();
+                };
+                list.appendChild(div);
+            }
+
+            const panel = document.getElementById('upgrade-panel-content');
+            const progress = playerData.birdUpgrades[selectedBirdKey] || { level: 1, hp: 0, mana: 0, speed: 0 };
+            
+            const costLevel = progress.level * 500;
+            const costHp = (progress.hp + 1) * 100;
+            const costMana = (progress.mana + 1) * 100;
+            const costSpeed = (progress.speed + 1) * 150;
+
+            panel.innerHTML = `
+                <div class="level-badge">${t('level_badge')} ${progress.level}</div>
+                
+                <div style="text-align:center; margin-bottom:20px;">
+                    <button class="upgrade-btn" style="width:100%; padding:10px; background:#ffcc00; color:black" 
+                        onclick="buyLevelUp('${selectedBirdKey}')" ${playerData.coins < costLevel ? 'disabled' : ''}>
+                        ${t('btn_level_up')} (💰${costLevel})
+                    </button>
+                    <div style="font-size:10px; color:#aaa; margin-top:5px">${t('dmg_bonus')}</div>
+                </div>
+
+                <div class="upgrade-row">
+                    <div class="upgrade-info">
+                        <div class="upgrade-name">${t('stat_hp')}</div>
+                        <div class="upgrade-level">Lv ${progress.hp}</div>
+                    </div>
+                    <button class="upgrade-btn" onclick="buyStatUpgrade('${selectedBirdKey}', 'hp')" ${playerData.coins < costHp ? 'disabled' : ''}>
+                        + 💰${costHp}
+                    </button>
+                </div>
+
+                <div class="upgrade-row">
+                    <div class="upgrade-info">
+                        <div class="upgrade-name">${t('stat_mana')}</div>
+                        <div class="upgrade-level">Lv ${progress.mana}</div>
+                    </div>
+                    <button class="upgrade-btn" onclick="buyStatUpgrade('${selectedBirdKey}', 'mana')" ${playerData.coins < costMana ? 'disabled' : ''}>
+                        + 💰${costMana}
+                    </button>
+                </div>
+
+                <div class="upgrade-row">
+                    <div class="upgrade-info">
+                        <div class="upgrade-name">${t('stat_speed')}</div>
+                        <div class="upgrade-level">Lv ${progress.speed}</div>
+                    </div>
+                    <button class="upgrade-btn" onclick="buyStatUpgrade('${selectedBirdKey}', 'speed')" ${playerData.coins < costSpeed ? 'disabled' : ''}>
+                        + 💰${costSpeed}
+                    </button>
+                </div>
+            `;
+        }
+
+        window.buyLevelUp = (birdKey) => {
+            const progress = playerData.birdUpgrades[birdKey];
+            const cost = progress.level * 500;
+            if(playerData.coins >= cost) {
+                playerData.coins -= cost;
+                progress.level++;
+                saveGame();
+                renderUpgradePage();
+                document.getElementById('player-coins').innerText = playerData.coins;
+            }
+        };
+
+        window.buyStatUpgrade = (birdKey, statType) => {
+            const progress = playerData.birdUpgrades[birdKey];
+            let cost = 0;
+            if(statType === 'hp') cost = (progress.hp + 1) * 100;
+            else if(statType === 'mana') cost = (progress.mana + 1) * 100;
+            else if(statType === 'speed') cost = (progress.speed + 1) * 150;
+
+            if(playerData.coins >= cost) {
+                playerData.coins -= cost;
+                progress[statType]++;
+                saveGame();
+                renderUpgradePage();
+                document.getElementById('player-coins').innerText = playerData.coins;
+            }
+        };
 
         window.buyBird = (key, price) => {
             if(playerData.coins >= price) {
                 playerData.coins -= price;
                 playerData.unlockedBirds.push(key);
+                playerData.birdUpgrades[key] = { level: 1, hp: 0, mana: 0, speed: 0 };
                 saveGame();
                 renderLocker();
                 updateLobbyBird();
@@ -1426,20 +2102,23 @@
             camera.lookAt(0, 0, 0);
 
             document.getElementById('player-coins').innerText = playerData.coins;
+            
+            // Set initial language UI
+            updateLanguageUI();
+            
+            calculateDivision();
             updateLobbyBird();
         }
 
         window.selectBird = (key) => {
-            if(!playerData.unlockedBirds.includes(key)) return; // Só seleciona se tiver
             selectedBirdKey = key;
-            renderLocker(); // Atualiza UI
+            renderLocker(); 
             updateLobbyBird();
         };
 
         window.selectSkin = (key) => {
-            if(!playerData.unlockedSkins.includes(key)) return;
             selectedSkinKey = key;
-            renderLocker(); // Atualiza UI
+            renderLocker(); 
             updateLobbyBird();
         };
 
@@ -1457,22 +2136,36 @@
             lobbyBird.scale.set(1.3, 1.3, 1.3);
             scene.add(lobbyBird);
             
-            const unlocked = playerData.unlockedBirds.includes(selectedBirdKey);
+            const unlockedBird = playerData.unlockedBirds.includes(selectedBirdKey);
+            const unlockedSkin = playerData.unlockedSkins.includes(selectedSkinKey);
             const startBtn = document.getElementById('start-btn');
             
-            if(unlocked) {
+            if(unlockedBird && unlockedSkin) {
                 startBtn.disabled = false;
-                startBtn.innerText = "JOGAR";
+                startBtn.innerText = t('btn_play');
                 startBtn.style.filter = "none";
             } else {
                 startBtn.disabled = true;
-                startBtn.innerText = "BLOQUEADO";
+                startBtn.innerText = t('btn_locked');
                 startBtn.style.filter = "grayscale(1)";
+            }
+            
+            // Update stats panel description if in locker
+            if(document.getElementById('page-locker').classList.contains('active')) {
+                renderLocker();
             }
         }
 
         window.startGame = function() {
-            if(!playerData.unlockedBirds.includes(selectedBirdKey)) return;
+            if(!playerData.unlockedBirds.includes(selectedBirdKey) || !playerData.unlockedSkins.includes(selectedSkinKey)) return;
+
+            // Arena Checks
+            if(currentGameMode === 'arena') {
+                const fare = ARENA_DIVISIONS[currentDivision].fare;
+                arenaSessionStats = { kills: 0, placementPoints: 0, farePaid: fare, rankTop25: false, rankTop10: false };
+            } else {
+                arenaSessionStats = { kills: 0, placementPoints: 0, farePaid: 0 };
+            }
 
             gameState = 'GAME';
             sessionCoins = 0; 
@@ -1536,12 +2229,15 @@
 
             if (gameState === 'LOBBY') {
                 if(lobbyBird) {
-                    lobbyBird.rotation.y += 0.5 * dt;
                     lobbyBird.position.y = -0.5 + Math.sin(clock.elapsedTime * 1.5) * 0.15;
                 }
                 if(lobbyParticles) {
                     lobbyParticles.rotation.y += 0.05 * dt;
                 }
+                
+                camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetCamZ, 0.1);
+                camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetCamY, 0.1);
+                
                 renderer.render(scene, camera);
             } 
             else if (gameState === 'GAME') {
