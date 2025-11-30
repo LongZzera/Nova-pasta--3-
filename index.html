@@ -2,10 +2,14 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BIRD GAME: Battle Royale</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@500;700&display=swap');
+
+        :root {
+            --hud-scale: 1.0;
+        }
 
         body {
             margin: 0;
@@ -13,6 +17,8 @@
             background-color: #0f0f13;
             font-family: 'Rajdhani', sans-serif;
             user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
         }
 
         /* --- UI GERAL --- */
@@ -32,7 +38,11 @@
         }
 
         /* BARRA DE STATUS */
-        #stats-bar { bottom: 30px; left: 30px; width: 320px; transform: skewX(-10deg); }
+        #stats-bar { 
+            bottom: 30px; left: 30px; width: 320px; 
+            transform: skewX(-10deg) scale(var(--hud-scale)); 
+            transform-origin: bottom left; 
+        }
         .hud-content { transform: skewX(10deg); }
         .bar-container {
             width: 100%; height: 12px; background: #111;
@@ -62,6 +72,8 @@
             text-align: right; 
             border-right: 4px solid #ffcc00; 
             min-width: 150px;
+            transform: scale(var(--hud-scale));
+            transform-origin: top right;
         }
         #info-panel h2 { 
             margin: 0 0 10px 0; 
@@ -80,7 +92,8 @@
         
         #crosshair {
             position: absolute; top: 50%; left: 50%; width: 20px; height: 20px;
-            transform: translate(-50%, -50%); border: 2px solid rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%) scale(var(--hud-scale)); 
+            border: 2px solid rgba(255, 255, 255, 0.5);
             border-radius: 50%; pointer-events: none;
         }
         #crosshair::after {
@@ -90,23 +103,69 @@
         }
 
         #storm-warning {
-            position: absolute; top: 15%; left: 50%; transform: translateX(-50%);
+            position: absolute; top: 15%; left: 50%; transform: translateX(-50%) scale(var(--hud-scale));
             color: #ff4444; font-family: 'Black Ops One'; font-size: 32px;
             text-shadow: 0 0 10px red; display: none; animation: pulse 0.8s infinite;
         }
 
         #altitude-warning {
-            position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
+            position: absolute; top: 10%; left: 50%; transform: translateX(-50%) scale(var(--hud-scale));
             color: #ffcc00; font-family: 'Black Ops One'; font-size: 24px;
             text-shadow: 0 0 10px orange; display: none; animation: pulse 0.5s infinite;
         }
 
         #arena-notification {
-            position: absolute; top: 25%; left: 50%; transform: translateX(-50%);
+            position: absolute; top: 25%; left: 50%; transform: translateX(-50%) scale(var(--hud-scale));
             color: #00ffcc; font-family: 'Black Ops One'; font-size: 28px;
             text-shadow: 0 0 10px #00ffcc; text-align: center;
             opacity: 0; transition: opacity 0.5s;
         }
+
+        #location-notification {
+            position: absolute; top: 20%; left: 50%; transform: translateX(-50%) scale(var(--hud-scale));
+            color: #fff; font-family: 'Black Ops One'; font-size: 22px;
+            text-shadow: 0 0 10px #000; text-align: center;
+            opacity: 0; transition: opacity 1s; letter-spacing: 2px;
+            border-bottom: 2px solid #ff00cc; padding-bottom: 5px;
+        }
+
+        #bus-jump-msg {
+            position: absolute; top: 70%; left: 50%; transform: translateX(-50%) scale(var(--hud-scale));
+            font-family: 'Black Ops One'; font-size: 36px; color: #ffcc00;
+            text-shadow: 0 0 15px black; text-align: center; display: none;
+            animation: pulse 1s infinite; pointer-events: none;
+        }
+
+        /* --- MOBILE CONTROLS --- */
+        #mobile-controls {
+            display: none;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 60;
+        }
+        .mob-btn {
+            position: absolute; pointer-events: auto;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%; color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Black Ops One'; font-size: 24px;
+            user-select: none; backdrop-filter: blur(4px);
+            touch-action: none;
+            transform: scale(var(--hud-scale));
+            transform-origin: center;
+        }
+        .mob-btn:active { 
+            background: rgba(255,204,0, 0.5); 
+            border-color: #ffcc00; 
+            transform: scale(calc(var(--hud-scale) * 0.95)); 
+        }
+        
+        #mob-up { bottom: 140px; left: 40px; width: 70px; height: 70px; }
+        #mob-down { bottom: 40px; left: 40px; width: 70px; height: 70px; }
+        
+        #mob-fire { bottom: 60px; right: 40px; width: 90px; height: 90px; background: rgba(255, 50, 50, 0.3); border-color: #ff3333; font-size:30px;}
+        #mob-fly { bottom: 180px; right: 40px; width: 70px; height: 70px; background: rgba(0, 204, 255, 0.3); border-color: #00ccff;}
+        #mob-abil { bottom: 180px; right: 130px; width: 60px; height: 60px; background: rgba(255, 204, 0, 0.3); border-color: #ffcc00; font-size: 18px;}
 
         /* --- LOBBY UI --- */
         #lobby-ui {
@@ -141,7 +200,6 @@
             display: flex; align-items: center; gap: 10px; border: 2px solid;
         }
 
-        /* CONFIG BTN */
         #settings-btn {
             position: absolute; top: 30px; left: 40px; z-index: 25;
             background: rgba(0,0,0,0.6); border: 2px solid #aaa; color: #aaa;
@@ -150,7 +208,6 @@
         }
         #settings-btn:hover { background: #333; color: white; border-color: white; transform: rotate(90deg); }
 
-        /* SETTINGS MODAL */
         #settings-modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); z-index: 100; display: none;
@@ -162,7 +219,7 @@
             box-shadow: 0 0 30px rgba(255, 0, 204, 0.2);
         }
         .settings-title { font-family: 'Black Ops One'; font-size: 32px; color: #ff00cc; margin-bottom: 30px; }
-        .lang-options { display: flex; gap: 20px; justify-content: center; margin-bottom: 30px; }
+        .lang-options { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; }
         .lang-btn {
             background: #333; border: 2px solid #555; padding: 15px; border-radius: 10px;
             cursor: pointer; width: 120px; transition: all 0.2s;
@@ -174,9 +231,9 @@
         .close-settings {
             background: transparent; border: 2px solid #aaa; color: #aaa;
             padding: 10px 30px; font-family: 'Black Ops One'; font-size: 18px; cursor: pointer;
+            margin-top: 20px;
         }
         .close-settings:hover { border-color: white; color: white; }
-
 
         .page-container {
             flex: 1; position: relative; width: 100%; height: 100%;
@@ -184,7 +241,6 @@
         }
         .page-container.active { display: block; }
 
-        /* INÍCIO */
         .home-content {
             position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
             display: flex; flex-direction: column; align-items: center; gap: 20px;
@@ -361,6 +417,8 @@
         <div id="settings-modal">
             <div class="settings-content">
                 <div class="settings-title" data-key="settings_title">CONFIGURAÇÕES</div>
+                
+                <!-- LANG -->
                 <div style="font-size:14px; color:#aaa; margin-bottom:10px" data-key="lang_label">IDIOMA / LANGUAGE</div>
                 <div class="lang-options">
                     <div class="lang-btn active" id="lang-pt" onclick="setLanguage('pt')">
@@ -372,6 +430,24 @@
                         <span class="lang-name">ENGLISH</span>
                     </div>
                 </div>
+
+                <!-- CONTROLS -->
+                <div style="font-size:14px; color:#aaa; margin-bottom:10px" data-key="ctrl_label">CONTROLES / CONTROLS</div>
+                <div class="lang-options">
+                    <div class="lang-btn active" id="ctrl-pc" onclick="setControls('pc')">
+                        <span class="lang-flag">💻</span>
+                        <span class="lang-name">PC / MOUSE</span>
+                    </div>
+                    <div class="lang-btn" id="ctrl-mobile" onclick="setControls('mobile')">
+                        <span class="lang-flag">📱</span>
+                        <span class="lang-name">MOBILE</span>
+                    </div>
+                </div>
+
+                <!-- HUD SCALE -->
+                <div style="font-size:14px; color:#aaa; margin-bottom:5px" data-key="hud_scale_label">TAMANHO HUD / HUD SCALE</div>
+                <input type="range" id="hud-slider" min="0.5" max="1.5" step="0.1" value="1" oninput="setHudScale(this.value)" style="width:80%; margin-bottom:20px;">
+
                 <button class="close-settings" onclick="closeSettings()" data-key="btn_close">FECHAR</button>
             </div>
         </div>
@@ -465,9 +541,10 @@
         <div id="storm-warning">! TEMPESTADE !</div>
         <div id="altitude-warning">! ALTITUDE MÁXIMA !</div>
         <div id="arena-notification"></div>
+        <div id="location-notification"></div>
+        <div id="bus-jump-msg" data-key="jump_msg">PRESS SPACE TO JUMP</div>
         
         <div class="hud-panel" id="info-panel">
-            <!-- Fix: separated span to not be overwritten -->
             <h2><span data-key="hud_alive">VIVOS:</span> <span id="alive-count">50</span></h2>
             <div class="hud-stat-row" style="color: #ff3333;">
                 <span>☠️</span> <span id="kill-count">0</span>
@@ -498,6 +575,15 @@
                     <span data-key="hud_controls">SEGURE ESPAÇO: SUBIR | W: MERGULHO</span>
                 </div>
             </div>
+        </div>
+
+        <!-- MOBILE CONTROLS OVERLAY -->
+        <div id="mobile-controls">
+            <div class="mob-btn" id="mob-up">W</div>
+            <div class="mob-btn" id="mob-down">S</div>
+            <div class="mob-btn" id="mob-fire">🔥</div>
+            <div class="mob-btn" id="mob-fly">⬆️</div>
+            <div class="mob-btn" id="mob-abil">⚡</div>
         </div>
     </div>
 
@@ -532,6 +618,8 @@
                 nav_pass: "Passe",
                 settings_title: "CONFIGURAÇÕES",
                 lang_label: "IDIOMA / LANGUAGE",
+                ctrl_label: "CONTROLES / CONTROLS",
+                hud_scale_label: "TAMANHO DO HUD / HUD SCALE",
                 btn_close: "FECHAR",
                 mode_casual: "CASUAL",
                 mode_arena: "ARENA (RANKED)",
@@ -584,6 +672,7 @@
                 res_place: "Colocação:",
                 res_total: "TOTAL:",
                 btn_back: "VOLTAR AO LOBBY",
+                jump_msg: "PULAR DO ÔNIBUS [ESPAÇO]",
                 bird_eagle_name: "Águia Real", bird_eagle_desc: "Equilibrada. Habilidade: Empurrão Sônico.", bird_eagle_abil: "Onda Sônica",
                 bird_falcon_name: "Falcão Veloz", bird_falcon_desc: "Mergulho supersônico. Habilidade: Turbo.", bird_falcon_abil: "Turbo",
                 bird_zanholo_name: "Zanholo", bird_zanholo_desc: "Tucano do Passe. Ágil e exótico. Habilidade: Tropicália.", bird_zanholo_abil: "Tropicália",
@@ -604,6 +693,8 @@
                 nav_pass: "Pass",
                 settings_title: "SETTINGS",
                 lang_label: "LANGUAGE",
+                ctrl_label: "CONTROLS",
+                hud_scale_label: "HUD SCALE",
                 btn_close: "CLOSE",
                 mode_casual: "CASUAL",
                 mode_arena: "ARENA (RANKED)",
@@ -656,6 +747,7 @@
                 res_place: "Placement:",
                 res_total: "TOTAL:",
                 btn_back: "BACK TO LOBBY",
+                jump_msg: "JUMP FROM BUS [SPACE]",
                 bird_eagle_name: "Golden Eagle", bird_eagle_desc: "Balanced. Ability: Sonic Push.", bird_eagle_abil: "Sonic Wave",
                 bird_falcon_name: "Peregrine Falcon", bird_falcon_desc: "Supersonic dive. Ability: Turbo.", bird_falcon_abil: "Turbo",
                 bird_zanholo_name: "Zanholo", bird_zanholo_desc: "Battle Pass Toucan. Exotic. Ability: Tropicalia.", bird_zanholo_abil: "Tropicalia",
@@ -692,6 +784,30 @@
             { id: "CAMPEÃO III", min: 10000, fare: 60 }
         ];
 
+        // --- MAP LOCATIONS ---
+        const LOCATIONS = {
+            woods: [
+                { name: "Neonópolis Noturna", type: "city_neon" },
+                { name: "Montanha Ecoante", type: "mountain" },
+                { name: "Lago Cristalino", type: "lake" },
+                { name: "Fortaleza Frenética", type: "fort" },
+                { name: "Vila Vitória", type: "village" }
+            ],
+            desert: [
+                { name: "Desfiladeiro Sussurrante", type: "canyon" },
+                { name: "Posto Solitário", type: "gas" },
+                { name: "Ruínas Antigas", type: "ruins" },
+                { name: "Zona Volcânica", type: "volcano" },
+                { name: "Fábrica de Robôs", type: "factory" }
+            ],
+            arctic: [
+                { name: "Vila Congelada", type: "village_ice" },
+                { name: "Porto Glacial", type: "harbor" },
+                { name: "Castelo do Inverno", type: "castle" },
+                { name: "Centro Tecnológico Nexus", type: "city_tech" }
+            ]
+        };
+
         // --- SISTEMA DE DADOS E ECONOMIA ---
         let playerData = {
             coins: 100,
@@ -701,16 +817,20 @@
             birdUpgrades: {},
             bpLevel: 1,
             bpExp: 0,
-            language: 'pt' // Default language
+            language: 'pt',
+            controls: 'pc', // 'pc' or 'mobile'
+            hudScale: 1.0 // New property
         };
 
-        if(localStorage.getItem('skyLordsSaveV5')) {
+        if(localStorage.getItem('skyLordsSaveV7')) {
             try { 
-                const loaded = JSON.parse(localStorage.getItem('skyLordsSaveV5')); 
+                const loaded = JSON.parse(localStorage.getItem('skyLordsSaveV7')); 
                 playerData = { ...playerData, ...loaded };
                 if(!playerData.birdUpgrades) playerData.birdUpgrades = {};
                 if(playerData.arenaPoints === undefined) playerData.arenaPoints = 0;
                 if(!playerData.language) playerData.language = 'pt';
+                if(!playerData.controls) playerData.controls = 'pc';
+                if(playerData.hudScale === undefined) playerData.hudScale = 1.0;
             } catch(e) {}
         }
 
@@ -721,10 +841,10 @@
             zanholo:     { nameKey: "bird_zanholo_name",      hp: 100, mana: 130, speed: 1.1, turn: 0.8, baseColor: 0x111111, price: 9999, descKey: "bird_zanholo_desc", abilKey: "bird_zanholo_abil", abilityCD: 8, abilityType: 'dash' },
             owl:         { nameKey: "bird_owl_name", hp: 130, mana: 150, speed: 0.6, turn: 1.1, baseColor: 0xeeeeee, price: 500,  descKey: "bird_owl_desc", abilKey: "bird_owl_abil", abilityCD: 10, abilityType: 'stealth' },
             hummingbird: { nameKey: "bird_hummingbird_name",   hp: 50,  mana: 200, speed: 0.9, turn: 1.5, baseColor: 0x00ffcc, price: 800,  descKey: "bird_hummingbird_desc", abilKey: "bird_hummingbird_abil", abilityCD: 12, abilityType: 'heal' },
-            vulture:     { nameKey: "bird_vulture_name",       hp: 160, mana: 80,  speed: 0.7, turn: 0.7, baseColor: 0xaa4444, price: 600,  descKey: "bird_vulture_desc", abilKey: "bird_vulture_abil", abilityCD: 15, abilityType: 'shield' },
-            crow:        { nameKey: "bird_crow_name",        hp: 90,  mana: 140, speed: 0.85, turn: 1.2, baseColor: 0x222222, price: 1000, descKey: "bird_crow_desc", abilKey: "bird_crow_abil", abilityCD: 6, abilityType: 'teleport' },
-            phoenix:     { nameKey: "bird_phoenix_name",        hp: 120, mana: 180, speed: 0.9, turn: 0.8, baseColor: 0xff4500, price: 2500, descKey: "bird_phoenix_desc", abilKey: "bird_phoenix_abil", abilityCD: 12, abilityType: 'nova' },
-            nagas:       { nameKey: "bird_nagas_name",        hp: 300, mana: 300, speed: 1.0, turn: 1.0, baseColor: 0x4b0082, price: 10000, descKey: "bird_nagas_desc", abilKey: "bird_nagas_abil", abilityCD: 20, abilityType: 'void' }
+            vulture:     { nameKey: "bird_vulture_name",        hp: 160, mana: 80,  speed: 0.7, turn: 0.7, baseColor: 0xaa4444, price: 600,  descKey: "bird_vulture_desc", abilKey: "bird_vulture_abil", abilityCD: 15, abilityType: 'shield' },
+            crow:        { nameKey: "bird_crow_name",         hp: 90,  mana: 140, speed: 0.85, turn: 1.2, baseColor: 0x222222, price: 1000, descKey: "bird_crow_desc", abilKey: "bird_crow_abil", abilityCD: 6, abilityType: 'teleport' },
+            phoenix:     { nameKey: "bird_phoenix_name",         hp: 120, mana: 180, speed: 0.9, turn: 0.8, baseColor: 0xff4500, price: 2500, descKey: "bird_phoenix_desc", abilKey: "bird_phoenix_abil", abilityCD: 12, abilityType: 'nova' },
+            nagas:       { nameKey: "bird_nagas_name",         hp: 300, mana: 300, speed: 1.0, turn: 1.0, baseColor: 0x4b0082, price: 10000, descKey: "bird_nagas_desc", abilKey: "bird_nagas_abil", abilityCD: 20, abilityType: 'void' }
         };
 
         if (playerData.bpLevel >= 1 && !playerData.unlockedBirds.includes('zanholo')) {
@@ -738,7 +858,7 @@
         }
 
         function saveGame() {
-            localStorage.setItem('skyLordsSaveV5', JSON.stringify(playerData));
+            localStorage.setItem('skyLordsSaveV7', JSON.stringify(playerData));
             document.getElementById('player-coins').innerText = playerData.coins;
             document.getElementById('arena-points-display').innerText = playerData.arenaPoints;
         }
@@ -782,6 +902,7 @@
         let mouseX = 0, mouseY = 0;
         let killCount = 0;
         let sessionCoins = 0;
+        let battleBus, busPath = 0;
         
         let currentGameMode = 'casual'; 
         let currentDivision = 0;
@@ -935,6 +1056,63 @@
             }
         }
 
+        // --- BATTLE BUS ---
+        function createBattleBus() {
+            const group = new THREE.Group();
+            
+            // Body
+            const bodyGeo = new THREE.BoxGeometry(6, 6, 14);
+            const bodyMat = new THREE.MeshStandardMaterial({color: 0x0033cc}); // Blue
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            group.add(body);
+
+            // Balloon
+            const balloonGeo = new THREE.SphereGeometry(10, 16, 16);
+            const balloonMat = new THREE.MeshStandardMaterial({color: 0xdddddd});
+            const balloon = new THREE.Mesh(balloonGeo, balloonMat);
+            balloon.position.y = 15;
+            group.add(balloon);
+
+            // Ropes
+            const ropeMat = new THREE.MeshBasicMaterial({color: 0x000000});
+            const rope1 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 10), ropeMat);
+            rope1.position.set(2, 8, 4); rope1.rotation.z = -0.2;
+            group.add(rope1);
+            const rope2 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 10), ropeMat);
+            rope2.position.set(-2, 8, 4); rope2.rotation.z = 0.2;
+            group.add(rope2);
+            const rope3 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 10), ropeMat);
+            rope3.position.set(2, 8, -4); rope3.rotation.z = -0.2;
+            group.add(rope3);
+            const rope4 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 10), ropeMat);
+            rope4.position.set(-2, 8, -4); rope4.rotation.z = 0.2;
+            group.add(rope4);
+
+            // Thrusters
+            const thrusterGeo = new THREE.CylinderGeometry(1, 1.5, 4, 8);
+            const thrusterMat = new THREE.MeshStandardMaterial({color: 0x333333});
+            const thrustL = new THREE.Mesh(thrusterGeo, thrusterMat);
+            thrustL.rotation.x = Math.PI/2;
+            thrustL.position.set(3.5, 0, -5);
+            group.add(thrustL);
+            const thrustR = thrustL.clone();
+            thrustR.position.set(-3.5, 0, -5);
+            group.add(thrustR);
+
+            // Flame
+            const flameGeo = new THREE.ConeGeometry(0.8, 4, 8);
+            const flameMat = new THREE.MeshBasicMaterial({color: 0xffaa00});
+            const flameL = new THREE.Mesh(flameGeo, flameMat);
+            flameL.rotation.x = -Math.PI/2;
+            flameL.position.set(0, -2.5, 0); 
+            thrustL.add(flameL);
+            const flameR = flameL.clone();
+            thrustR.add(flameR);
+
+            group.castShadow = true;
+            return group;
+        }
+
         // --- GAME WORLD ---
         class GameWorld {
             constructor(mapKey) {
@@ -943,10 +1121,12 @@
                 this.maxRadius = 800;
                 this.noise = new ImprovedNoise();
                 this.colliders = []; 
+                this.pois = [];
                 this.initEnvironment();
                 this.initTerrain();
                 this.initStorm();
                 this.initNests();
+                this.generatePOIs();
             }
 
             initEnvironment() {
@@ -1011,6 +1191,186 @@
                 mesh.receiveShadow = true;
                 scene.add(mesh);
                 this.generateScenery();
+            }
+
+            generatePOIs() {
+                const mapLocs = LOCATIONS[selectedMapKey] || [];
+                // Pick 3-4 random POIs
+                const shuffled = mapLocs.sort(() => 0.5 - Math.random()).slice(0, 4);
+                
+                // Distribute them
+                const angles = [0, Math.PI/2, Math.PI, Math.PI*1.5];
+                
+                shuffled.forEach((loc, i) => {
+                    const angle = angles[i] + (Math.random() - 0.5) * 0.5;
+                    const dist = 400 + Math.random() * 200;
+                    const x = Math.cos(angle) * dist;
+                    const z = Math.sin(angle) * dist;
+                    const y = this.getTerrainHeight(x, z);
+                    
+                    this.buildPOI(loc, x, y, z);
+                    this.pois.push({name: loc.name, x: x, z: z});
+                });
+            }
+
+            buildPOI(loc, x, y, z) {
+                const group = new THREE.Group();
+                group.position.set(x, y, z);
+                
+                // --- CITY / TECH / NEON ---
+                if (loc.type.includes("city") || loc.type === "nexus") {
+                    const isNeon = loc.type.includes("neon");
+                    const baseColor = isNeon ? 0x111111 : 0xeeeeee;
+                    const glowColor = isNeon ? 0xff00ff : 0x00ccff; // Purple vs Blue
+                    
+                    // Create a cluster of skyscrapers
+                    for(let i=0; i<5; i++) {
+                        const bGroup = new THREE.Group();
+                        const bx = (Math.random()-0.5)*60;
+                        const bz = (Math.random()-0.5)*60;
+                        
+                        const width = 10 + Math.random()*10;
+                        const height = 40 + Math.random()*60;
+                        
+                        // Main tower
+                        const geo = new THREE.BoxGeometry(width, height, width);
+                        const mat = new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.2, metalness: 0.8 });
+                        const mesh = new THREE.Mesh(geo, mat);
+                        mesh.position.y = height/2;
+                        bGroup.add(mesh);
+
+                        // Windows/Lights
+                        const winGeo = new THREE.BoxGeometry(width + 0.2, height * 0.8, width + 0.2);
+                        const winMat = new THREE.MeshBasicMaterial({ color: glowColor, transparent: true, opacity: 0.3 });
+                        const win = new THREE.Mesh(winGeo, winMat);
+                        win.position.y = height/2;
+                        bGroup.add(win);
+
+                        // Antenna
+                        const antGeo = new THREE.CylinderGeometry(0.5, 0.5, 10);
+                        const ant = new THREE.Mesh(antGeo, mat);
+                        ant.position.y = height + 5;
+                        bGroup.add(ant);
+
+                        bGroup.position.set(bx, 0, bz);
+                        group.add(bGroup);
+                        
+                        // Collider
+                        this.colliders.push({type: 'box', minX: x+bx-width/2, maxX: x+bx+width/2, minY: y, maxY: y+height, minZ: z+bz-width/2, maxZ: z+bz+width/2});
+                    }
+                } 
+                // --- CASTLE / FORT / RUINS ---
+                else if (loc.type === "castle" || loc.type === "fort" || loc.type === "ruins") {
+                    const isRuins = loc.type === "ruins";
+                    const mat = new THREE.MeshStandardMaterial({ color: 0x888888, flatShading: true });
+                    
+                    // Central Keep
+                    if(!isRuins) {
+                        const keepH = 40;
+                        const keepW = 20;
+                        const keep = new THREE.Mesh(new THREE.BoxGeometry(keepW, keepH, keepW), mat);
+                        keep.position.y = keepH/2;
+                        group.add(keep);
+                        this.colliders.push({type:'box', minX:x-10, maxX:x+10, minY:y, maxY:y+keepH, minZ:z-10, maxZ:z+10});
+                    }
+
+                    // Walls & Towers
+                    for(let i=0; i<4; i++) {
+                        const angle = (i/4)*Math.PI*2;
+                        const dist = 30;
+                        const tx = Math.cos(angle)*dist;
+                        const tz = Math.sin(angle)*dist;
+                        
+                        // Tower
+                        const tH = isRuins ? 10 + Math.random()*10 : 30;
+                        const tower = new THREE.Mesh(new THREE.CylinderGeometry(6, 8, tH, 6), mat);
+                        tower.position.set(tx, tH/2, tz);
+                        group.add(tower);
+                        this.colliders.push({type:'cylinder', x:x+tx, z:z+tz, yMin:y, yMax:y+tH, radius:6});
+
+                        // Wall segment connecting to next
+                        if(!isRuins || Math.random() > 0.5) {
+                            const nextAngle = ((i+1)/4)*Math.PI*2;
+                            const nx = Math.cos(nextAngle)*dist;
+                            const nz = Math.sin(nextAngle)*dist;
+                            
+                            const midX = (tx+nx)/2;
+                            const midZ = (tz+nz)/2;
+                            const wallLen = Math.sqrt((tx-nx)**2 + (tz-nz)**2);
+                            const wallH = 15;
+                            
+                            const wall = new THREE.Mesh(new THREE.BoxGeometry(2, wallH, wallLen), mat);
+                            wall.position.set(midX, wallH/2, midZ);
+                            wall.lookAt(x+nx, y+wallH/2, z+nz); // Align with next tower
+                            group.add(wall);
+                            // Approx collider logic omitted for walls to save perf/complexity, rely on towers
+                        }
+                    }
+                }
+                // --- VOLCANO ---
+                else if (loc.type === "volcano") {
+                    // Multi-stage cone
+                    const mat = new THREE.MeshStandardMaterial({ color: 0x221111, flatShading: true });
+                    const base = new THREE.Mesh(new THREE.ConeGeometry(80, 40, 16, 1, true), mat);
+                    base.position.y = 20;
+                    group.add(base);
+                    
+                    const top = new THREE.Mesh(new THREE.CylinderGeometry(20, 50, 40, 16, 1, true), mat);
+                    top.position.y = 50;
+                    group.add(top);
+
+                    // Lava pool
+                    const lava = new THREE.Mesh(new THREE.CircleGeometry(18, 16), new THREE.MeshBasicMaterial({ color: 0xff3300 }));
+                    lava.rotation.x = -Math.PI/2;
+                    lava.position.y = 65;
+                    group.add(lava);
+                    
+                    this.colliders.push({type:'cylinder', x:x, z:z, yMin:y, yMax:y+70, radius:50});
+                }
+                // --- FACTORY ---
+                else if (loc.type === "factory") {
+                    const mat = new THREE.MeshStandardMaterial({ color: 0x555566, flatShading: true });
+                    // Main Hall
+                    const hallW = 40, hallH = 20, hallD = 60;
+                    const hall = new THREE.Mesh(new THREE.BoxGeometry(hallW, hallH, hallD), mat);
+                    hall.position.y = hallH/2;
+                    group.add(hall);
+                    this.colliders.push({type:'box', minX:x-20, maxX:x+20, minY:y, maxY:y+20, minZ:z-30, maxZ:z+30});
+
+                    // Smokestacks
+                    for(let i=0; i<3; i++) {
+                        const stack = new THREE.Mesh(new THREE.CylinderGeometry(2, 4, 40), mat);
+                        stack.position.set(10, 20, -20 + i*20);
+                        group.add(stack);
+                    }
+                }
+                // --- DEFAULT / VILLAGE ---
+                else {
+                    // Village logic essentially
+                    const houses = 5;
+                    for(let i=0; i<houses; i++) {
+                        const hGroup = new THREE.Group();
+                        const hX = (Math.random()-0.5)*60;
+                        const hZ = (Math.random()-0.5)*60;
+                        
+                        const matWall = new THREE.MeshStandardMaterial({color: 0xeebb99});
+                        const matRoof = new THREE.MeshStandardMaterial({color: 0x884422});
+                        
+                        const base = new THREE.Mesh(new THREE.BoxGeometry(10, 8, 10), matWall);
+                        base.position.y = 4;
+                        const roof = new THREE.Mesh(new THREE.ConeGeometry(8, 6, 4), matRoof);
+                        roof.position.y = 11;
+                        roof.rotation.y = Math.PI/4;
+                        
+                        hGroup.add(base, roof);
+                        hGroup.position.set(hX, 0, hZ);
+                        group.add(hGroup);
+                        
+                        this.colliders.push({type:'box', minX:x+hX-5, maxX:x+hX+5, minY:y, maxY:y+15, minZ:z+hZ-5, maxZ:z+hZ+5});
+                    }
+                }
+
+                scene.add(group);
             }
 
             generateScenery() {
@@ -1158,10 +1518,31 @@
                     this.stormRadius -= 2.0 * dt;
                     this.stormMesh.scale.set(this.stormRadius/this.maxRadius, 1, this.stormRadius/this.maxRadius);
                 }
-                const playerDist = new THREE.Vector2(player.position.x, player.position.z).length();
-                const warning = document.getElementById('storm-warning');
-                warning.style.display = (playerDist > this.stormRadius - 50) ? 'block' : 'none';
-                warning.innerText = playerDist > this.stormRadius ? t('hud_storm') : t('hud_storm_safe');
+                
+                // POI Notification
+                if(player) {
+                    const playerDist = new THREE.Vector2(player.position.x, player.position.z).length();
+                    const warning = document.getElementById('storm-warning');
+                    warning.style.display = (playerDist > this.stormRadius - 50) ? 'block' : 'none';
+                    warning.innerText = playerDist > this.stormRadius ? t('hud_storm') : t('hud_storm_safe');
+
+                    // Check POIs
+                    const notif = document.getElementById('location-notification');
+                    let nearbyPOI = null;
+                    for(let poi of this.pois) {
+                        const d = new THREE.Vector2(player.position.x - poi.x, player.position.z - poi.z).length();
+                        if(d < 80) {
+                            nearbyPOI = poi.name;
+                            break;
+                        }
+                    }
+                    if(nearbyPOI) {
+                        notif.innerText = "📍 " + nearbyPOI;
+                        notif.style.opacity = 1;
+                    } else {
+                        notif.style.opacity = 0;
+                    }
+                }
             }
         }
 
@@ -1360,8 +1741,16 @@
 
                 this.rotation.y = this.yaw; 
                 this.rotation.x = THREE.MathUtils.lerp(this.rotation.x, this.pitch, 5 * dt);
-                const turnFactor = -Math.min(Math.max(mouseX * 0.5, -1), 1);
-                this.rotation.z = THREE.MathUtils.lerp(this.rotation.z, turnFactor * 0.8, 3 * dt);
+                
+                // MouseX decay handled by input logic, but for smooth turn:
+                // Only decay turn if using PC controls or if no touch input active
+                if(playerData.controls === 'pc') {
+                    const turnFactor = -Math.min(Math.max(mouseX * 0.5, -1), 1);
+                    this.rotation.z = THREE.MathUtils.lerp(this.rotation.z, turnFactor * 0.8, 3 * dt);
+                } else {
+                    // Mobile banking could be added here based on turn speed
+                    this.rotation.z = THREE.MathUtils.lerp(this.rotation.z, 0, 3 * dt);
+                }
 
                 this.velocity.y -= 20 * dt;
                 
@@ -1649,6 +2038,9 @@
             gameState = 'GAMEOVER';
             document.exitPointerLock();
             document.getElementById('game-ui').style.display = 'none';
+            // Hide mobile controls on game over
+            document.getElementById('mobile-controls').style.display = 'none';
+            
             const scr = document.getElementById('game-over-screen');
             scr.style.display = 'flex';
             
@@ -1701,6 +2093,7 @@
             gameState = 'LOBBY';
             document.getElementById('game-over-screen').style.display = 'none';
             document.getElementById('game-ui').style.display = 'none';
+            document.getElementById('mobile-controls').style.display = 'none';
             document.getElementById('lobby-ui').style.display = 'flex';
             initLobby();
         };
@@ -1724,10 +2117,33 @@
             updateLanguageUI();
         };
 
+        window.setControls = function(ctrl) {
+            playerData.controls = ctrl;
+            saveGame();
+            updateLanguageUI();
+        };
+
+        window.setHudScale = function(val) {
+            playerData.hudScale = parseFloat(val);
+            document.documentElement.style.setProperty('--hud-scale', val);
+            saveGame();
+        };
+
         function updateLanguageUI() {
             const lang = playerData.language;
             document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('lang-' + lang).classList.add('active');
+            
+            // Update control buttons active state
+            document.getElementById('ctrl-pc').classList.remove('active');
+            document.getElementById('ctrl-mobile').classList.remove('active');
+            document.getElementById('ctrl-' + playerData.controls).classList.add('active');
+
+            // Apply existing settings
+            if (playerData.hudScale) {
+                document.getElementById('hud-slider').value = playerData.hudScale;
+                document.documentElement.style.setProperty('--hud-scale', playerData.hudScale);
+            }
 
             document.querySelectorAll('[data-key]').forEach(el => {
                 const k = el.getAttribute('data-key');
@@ -2103,7 +2519,7 @@
 
             document.getElementById('player-coins').innerText = playerData.coins;
             
-            // Set initial language UI
+            // Set initial language and settings UI
             updateLanguageUI();
             
             calculateDivision();
@@ -2167,7 +2583,7 @@
                 arenaSessionStats = { kills: 0, placementPoints: 0, farePaid: 0 };
             }
 
-            gameState = 'GAME';
+            gameState = 'BUS';
             sessionCoins = 0; 
             killCount = 0; 
             projectiles = []; 
@@ -2176,14 +2592,34 @@
 
             document.getElementById('lobby-ui').style.display = 'none';
             document.getElementById('game-ui').style.display = 'block';
-            document.getElementById('session-coins').innerText = '0';
-            document.getElementById('kill-count').innerText = '0';
+            document.getElementById('bus-jump-msg').style.display = 'block';
+            
+            // Hide player UI elements during BUS phase
+            document.getElementById('crosshair').style.display = 'none';
+            document.getElementById('stats-bar').style.display = 'none';
+            document.getElementById('info-panel').style.display = 'none';
+
+            // Show mobile controls if active (only Jump/Fly button will work)
+            if(playerData.controls === 'mobile') {
+                document.getElementById('mobile-controls').style.display = 'block';
+            } else {
+                document.getElementById('mobile-controls').style.display = 'none';
+            }
             
             scene.clear();
             
             world = new GameWorld(selectedMapKey);
-            player = new PlayerController(selectedBirdKey, selectedSkinKey);
             
+            // Create Bus
+            battleBus = createBattleBus();
+            busPath = -1000;
+            battleBus.position.set(0, 150, busPath);
+            scene.add(battleBus);
+
+            player = new PlayerController(selectedBirdKey, selectedSkinKey);
+            player.mesh.visible = false; // Hide player while on bus
+            player.dead = true; // Prevent updates
+
             const types = Object.keys(BIRD_STATS);
             for(let i=0; i<49; i++) {
                 let type = types[i % types.length];
@@ -2194,11 +2630,34 @@
             updateAliveCount();
         }
 
+        function jumpFromBus() {
+            if(gameState !== 'BUS') return;
+            gameState = 'GAME';
+            document.getElementById('bus-jump-msg').style.display = 'none';
+            document.getElementById('crosshair').style.display = 'block';
+            document.getElementById('stats-bar').style.display = 'block';
+            document.getElementById('info-panel').style.display = 'block';
+
+            if (playerData.controls === 'pc') {
+                document.body.requestPointerLock();
+            }
+
+            player.dead = false;
+            player.mesh.visible = true;
+            player.position.copy(battleBus.position);
+            player.position.y -= 10;
+            player.velocity.set(0, -10, 0); // Start falling
+        }
+
         function setupInputs() {
+            // PC Inputs
             document.addEventListener('keydown', e => {
                 if(e.code === 'KeyW') keys.w = true;
                 if(e.code === 'KeyS') keys.s = true;
-                if(e.code === 'Space') keys.space = true;
+                if(e.code === 'Space') {
+                    keys.space = true;
+                    if(gameState === 'BUS') jumpFromBus();
+                }
                 if(e.code === 'KeyQ') keys.q = true;
             });
             document.addEventListener('keyup', e => {
@@ -2209,16 +2668,109 @@
             });
             document.addEventListener('mousedown', () => {
                 if(gameState === 'LOBBY') return;
-                document.body.requestPointerLock();
-                if(player) player.fire();
+                // Only lock pointer if PC controls are active
+                if(playerData.controls === 'pc' && gameState === 'GAME') {
+                    document.body.requestPointerLock();
+                }
+                if(player && playerData.controls === 'pc' && gameState === 'GAME') player.fire();
             });
             document.addEventListener('mousemove', e => {
-                if(document.pointerLockElement === document.body && player) {
+                if(playerData.controls === 'pc' && (document.pointerLockElement === document.body || gameState === 'BUS')) {
                     const sens = 0.002;
-                    player.yaw -= e.movementX * sens;
-                    player.pitch -= e.movementY * sens;
-                    player.pitch = Math.max(-1.2, Math.min(1.2, player.pitch));
-                    mouseX = e.movementX; mouseY = e.movementY;
+                    if (gameState === 'GAME') {
+                        player.yaw -= e.movementX * sens;
+                        player.pitch -= e.movementY * sens;
+                        player.pitch = Math.max(-1.2, Math.min(1.2, player.pitch));
+                        mouseX = e.movementX; mouseY = e.movementY;
+                    } else if (gameState === 'BUS') {
+                        // Free look in bus
+                        camera.rotation.y -= e.movementX * sens;
+                        camera.rotation.x -= e.movementY * sens;
+                    }
+                }
+            });
+
+            // Mobile Inputs
+            setupMobileInputs();
+        }
+
+        function setupMobileInputs() {
+            // Helpers to attach touch events to buttons
+            const attachBtn = (id, keyName) => {
+                const el = document.getElementById(id);
+                el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyName] = true; });
+                el.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyName] = false; });
+            };
+
+            attachBtn('mob-up', 'w');
+            attachBtn('mob-down', 's');
+            // attachBtn('mob-fly', 'space'); // Special logic below
+            attachBtn('mob-abil', 'q');
+
+            // Jump / Fly button
+            const flyBtn = document.getElementById('mob-fly');
+            flyBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                keys.space = true;
+                if(gameState === 'BUS') jumpFromBus();
+            });
+            flyBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                keys.space = false;
+            });
+
+            // Fire button needs special logic (instant action)
+            const fireBtn = document.getElementById('mob-fire');
+            fireBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if(player && !player.dead && gameState === 'GAME') player.fire();
+            });
+
+            // Camera movement via touch (Right side of screen, but generalized)
+            // We ignore touches that started on a button
+            let previousTouches = {};
+
+            document.addEventListener('touchstart', (e) => {
+                if(playerData.controls !== 'mobile' || gameState === 'LOBBY') return;
+                for(let i=0; i<e.changedTouches.length; i++) {
+                    const t = e.changedTouches[i];
+                    // Check if target is a UI button
+                    if(!t.target.classList.contains('mob-btn')) {
+                        previousTouches[t.identifier] = { x: t.clientX, y: t.clientY };
+                    }
+                }
+            }, {passive: false});
+
+            document.addEventListener('touchmove', (e) => {
+                if(playerData.controls !== 'mobile' || gameState === 'LOBBY') return;
+                // e.preventDefault(); // Prevent scrolling
+                
+                for(let i=0; i<e.changedTouches.length; i++) {
+                    const t = e.changedTouches[i];
+                    if(previousTouches[t.identifier]) {
+                        const prev = previousTouches[t.identifier];
+                        const deltaX = t.clientX - prev.x;
+                        const deltaY = t.clientY - prev.y;
+                        const sens = 0.005; 
+
+                        if(gameState === 'GAME' && player) {
+                            player.yaw -= deltaX * sens;
+                            player.pitch -= deltaY * sens;
+                            player.pitch = Math.max(-1.2, Math.min(1.2, player.pitch));
+                        } else if (gameState === 'BUS') {
+                            camera.rotation.y -= deltaX * sens;
+                            camera.rotation.x -= deltaY * sens;
+                        }
+
+                        previousTouches[t.identifier] = { x: t.clientX, y: t.clientY };
+                    }
+                }
+            }, {passive: false});
+
+            document.addEventListener('touchend', (e) => {
+                for(let i=0; i<e.changedTouches.length; i++) {
+                    const t = e.changedTouches[i];
+                    delete previousTouches[t.identifier];
                 }
             });
         }
@@ -2240,12 +2792,46 @@
                 
                 renderer.render(scene, camera);
             } 
+            else if (gameState === 'BUS') {
+                busPath += 50 * dt;
+                if(battleBus) {
+                    battleBus.position.z = busPath;
+                    battleBus.rotation.z = Math.sin(clock.elapsedTime) * 0.05;
+                    
+                    camera.position.copy(battleBus.position);
+                    // Updated Camera Position: Behind and Above
+                    camera.position.y += 10; // Higher
+                    camera.position.z -= 25; // Further back (assuming bus moves +z)
+                    camera.lookAt(battleBus.position.clone().add(new THREE.Vector3(0, 0, 50))); // Look ahead
+                    
+                    // Allow free look override if using mouse
+                    if(playerData.controls === 'pc') {
+                        // Simple offset logic could be added here but fixed cam is better for bus
+                    }
+                }
+                
+                if (busPath > 1000) {
+                    // Force eject
+                    jumpFromBus();
+                }
+                renderer.render(scene, camera);
+            }
             else if (gameState === 'GAME') {
-                mouseX = 0; mouseY = 0;
+                if(playerData.controls !== 'pc') {
+                    mouseX = 0; 
+                }
+                
                 if(player) player.update(dt);
                 bots.forEach(b => b.update(dt));
                 if(world) world.update(dt);
                 updateProjectiles(dt);
+                
+                // Hide bus if far away or remove
+                if(battleBus && battleBus.visible) {
+                    battleBus.position.z += 50 * dt;
+                    if(battleBus.position.z > 2000) battleBus.visible = false;
+                }
+
                 renderer.render(scene, camera);
             }
         }
