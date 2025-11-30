@@ -135,6 +135,15 @@
             text-shadow: 0 0 15px black; text-align: center; display: none;
             animation: pulse 1s infinite; pointer-events: none;
         }
+        
+        /* NOVO: Timer da Ilha de Espera */
+        #waiting-msg {
+            position: absolute; top: 10%; left: 50%; transform: translateX(-50%) scale(var(--hud-scale));
+            font-family: 'Black Ops One'; font-size: 40px; color: #00ffcc;
+            text-shadow: 0 0 15px cyan; text-align: center; display: none;
+            background: rgba(0,0,0,0.5); padding: 10px 30px; border-radius: 10px;
+            border: 2px solid #00ffcc;
+        }
 
         /* --- MOBILE CONTROLS --- */
         #mobile-controls {
@@ -537,6 +546,7 @@
 
     <!-- HUD (IN-GAME) -->
     <div id="game-ui">
+        <div id="waiting-msg">PARTIDA COMEÇA EM: 15</div>
         <div id="crosshair"></div>
         <div id="storm-warning">! TEMPESTADE !</div>
         <div id="altitude-warning">! ALTITUDE MÁXIMA !</div>
@@ -673,6 +683,7 @@
                 res_total: "TOTAL:",
                 btn_back: "VOLTAR AO LOBBY",
                 jump_msg: "PULAR DO ÔNIBUS [ESPAÇO]",
+                waiting_msg: "PARTIDA COMEÇA EM: ",
                 bird_eagle_name: "Águia Real", bird_eagle_desc: "Equilibrada. Habilidade: Empurrão Sônico.", bird_eagle_abil: "Onda Sônica",
                 bird_falcon_name: "Falcão Veloz", bird_falcon_desc: "Mergulho supersônico. Habilidade: Turbo.", bird_falcon_abil: "Turbo",
                 bird_zanholo_name: "Zanholo", bird_zanholo_desc: "Tucano do Passe. Ágil e exótico. Habilidade: Tropicália.", bird_zanholo_abil: "Tropicália",
@@ -748,6 +759,7 @@
                 res_total: "TOTAL:",
                 btn_back: "BACK TO LOBBY",
                 jump_msg: "JUMP FROM BUS [SPACE]",
+                waiting_msg: "MATCH STARTS IN: ",
                 bird_eagle_name: "Golden Eagle", bird_eagle_desc: "Balanced. Ability: Sonic Push.", bird_eagle_abil: "Sonic Wave",
                 bird_falcon_name: "Peregrine Falcon", bird_falcon_desc: "Supersonic dive. Ability: Turbo.", bird_falcon_abil: "Turbo",
                 bird_zanholo_name: "Zanholo", bird_zanholo_desc: "Battle Pass Toucan. Exotic. Ability: Tropicalia.", bird_zanholo_abil: "Tropicalia",
@@ -903,6 +915,8 @@
         let killCount = 0;
         let sessionCoins = 0;
         let battleBus, busPath = 0;
+        let spawnIsland; // Armazena a ilha de espera
+        let waitingTimer = 15;
         
         let currentGameMode = 'casual'; 
         let currentDivision = 0;
@@ -1056,6 +1070,53 @@
             }
         }
 
+        // --- SPAWN ISLAND ---
+        function createSpawnIsland() {
+            const group = new THREE.Group();
+            group.position.set(5000, 500, 5000); // Longe do mapa principal
+
+            // Plataforma
+            const platformGeo = new THREE.CylinderGeometry(150, 120, 20, 32);
+            const platformMat = new THREE.MeshStandardMaterial({ 
+                color: 0x222233, 
+                roughness: 0.2, 
+                metalness: 0.8,
+                emissive: 0x111122,
+                emissiveIntensity: 0.5
+            });
+            const platform = new THREE.Mesh(platformGeo, platformMat);
+            platform.receiveShadow = true;
+            group.add(platform);
+
+            // Grid Holográfico no chão
+            const gridHelper = new THREE.GridHelper(200, 20, 0x00ffcc, 0x004466);
+            gridHelper.position.y = 10.1;
+            group.add(gridHelper);
+
+            // Pilares Decorativos
+            const pillarGeo = new THREE.BoxGeometry(10, 60, 10);
+            const pillarMat = new THREE.MeshStandardMaterial({ color: 0x444455 });
+            
+            for(let i=0; i<8; i++) {
+                const angle = (i/8) * Math.PI * 2;
+                const r = 100;
+                const p = new THREE.Mesh(pillarGeo, pillarMat);
+                p.position.set(Math.cos(angle)*r, 30, Math.sin(angle)*r);
+                p.castShadow = true;
+                group.add(p);
+            }
+
+            // Anéis flutuantes
+            const ringGeo = new THREE.TorusGeometry(60, 2, 16, 100);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc });
+            const ring1 = new THREE.Mesh(ringGeo, ringMat);
+            ring1.rotation.x = Math.PI/2;
+            ring1.position.y = 80;
+            group.add(ring1);
+
+            return group;
+        }
+
         // --- BATTLE BUS ---
         function createBattleBus() {
             const group = new THREE.Group();
@@ -1155,6 +1216,15 @@
             }
 
             checkCollision(pos, radius) {
+                // Colisão simples com a Ilha de Espera se estiver no estado WAITING
+                if (gameState === 'WAITING') {
+                    // Check bounding box of spawn island (aprox)
+                    if (pos.x > 4800 && pos.x < 5200 && pos.z > 4800 && pos.z < 5200 && pos.y > 500 && pos.y < 520) {
+                        return true;
+                    }
+                    return false;
+                }
+
                 for (let c of this.colliders) {
                     if (c.type === 'cylinder') {
                         if (pos.y >= c.yMin && pos.y <= c.yMax) {
@@ -1514,7 +1584,8 @@
             }
 
             update(dt) {
-                if(this.stormRadius > 50) {
+                // Storm doesn't shrink during WAITING
+                if(gameState === 'GAME' && this.stormRadius > 50) {
                     this.stormRadius -= 2.0 * dt;
                     this.stormMesh.scale.set(this.stormRadius/this.maxRadius, 1, this.stormRadius/this.maxRadius);
                 }
@@ -1523,24 +1594,31 @@
                 if(player) {
                     const playerDist = new THREE.Vector2(player.position.x, player.position.z).length();
                     const warning = document.getElementById('storm-warning');
-                    warning.style.display = (playerDist > this.stormRadius - 50) ? 'block' : 'none';
-                    warning.innerText = playerDist > this.stormRadius ? t('hud_storm') : t('hud_storm_safe');
-
-                    // Check POIs
-                    const notif = document.getElementById('location-notification');
-                    let nearbyPOI = null;
-                    for(let poi of this.pois) {
-                        const d = new THREE.Vector2(player.position.x - poi.x, player.position.z - poi.z).length();
-                        if(d < 80) {
-                            nearbyPOI = poi.name;
-                            break;
-                        }
-                    }
-                    if(nearbyPOI) {
-                        notif.innerText = "📍 " + nearbyPOI;
-                        notif.style.opacity = 1;
+                    
+                    if (gameState === 'GAME') {
+                        warning.style.display = (playerDist > this.stormRadius - 50) ? 'block' : 'none';
+                        warning.innerText = playerDist > this.stormRadius ? t('hud_storm') : t('hud_storm_safe');
                     } else {
-                        notif.style.opacity = 0;
+                        warning.style.display = 'none';
+                    }
+
+                    // Check POIs (only in game)
+                    if (gameState === 'GAME') {
+                        const notif = document.getElementById('location-notification');
+                        let nearbyPOI = null;
+                        for(let poi of this.pois) {
+                            const d = new THREE.Vector2(player.position.x - poi.x, player.position.z - poi.z).length();
+                            if(d < 80) {
+                                nearbyPOI = poi.name;
+                                break;
+                            }
+                        }
+                        if(nearbyPOI) {
+                            notif.innerText = "📍 " + nearbyPOI;
+                            notif.style.opacity = 1;
+                        } else {
+                            notif.style.opacity = 0;
+                        }
                     }
                 }
             }
@@ -1580,9 +1658,16 @@
                 this.rotation = new THREE.Euler(0, 0, 0, 'YXZ');
                 
                 if(!isPlayer) {
-                    const ang = Math.random()*Math.PI*2;
-                    const spawnRad = 80 + Math.random() * 700;
-                    this.position.set(Math.cos(ang)*spawnRad, 100, Math.sin(ang)*spawnRad);
+                    // Logic to spawn bots in game or on spawn island
+                    if(gameState === 'WAITING') {
+                        const ang = Math.random()*Math.PI*2;
+                        const r = Math.random() * 80;
+                        this.position.set(5000 + Math.cos(ang)*r, 520 + Math.random()*20, 5000 + Math.sin(ang)*r);
+                    } else {
+                        const ang = Math.random()*Math.PI*2;
+                        const spawnRad = 80 + Math.random() * 700;
+                        this.position.set(Math.cos(ang)*spawnRad, 100, Math.sin(ang)*spawnRad);
+                    }
                     this.rotation.set(0, Math.random() * Math.PI * 2, 0);
                 }
                 this.velocity = new THREE.Vector3();
@@ -1590,6 +1675,13 @@
 
             takeDamage(amt) {
                 if(this.dead) return;
+                
+                // NO DAMAGE IN WAITING LOBBY
+                if(gameState === 'WAITING') {
+                    // Visual feedback only? 
+                    return;
+                }
+
                 if(this.isShielded) amt *= 0.2; 
                 this.stats.hp -= amt;
                 if(this.isPlayer) updateHUD();
@@ -1709,6 +1801,13 @@
             }
 
             checkNests(dt) {
+                // Nests don't exist in WAITING/Spawn Island
+                if(gameState === 'WAITING') {
+                    // Auto regen mana fast
+                    this.stats.mana = Math.min(this.maxMana, this.stats.mana + 50 * dt);
+                    return;
+                }
+
                 for(let nest of nests) {
                     const distXZ = new THREE.Vector2(this.position.x - nest.position.x, this.position.z - nest.position.z).length();
                     const distY = Math.abs(this.position.y - nest.position.y);
@@ -1759,10 +1858,19 @@
                 if (keys.w) baseSpeed *= 1.5;
                 if (keys.s) baseSpeed *= 0.5;
 
-                if (keys.space && this.stats.mana > 0 && this.position.y < MAX_FLIGHT_HEIGHT) {
+                // Infinite flight in WAITING
+                let canFly = this.stats.mana > 0;
+                let heightLimit = MAX_FLIGHT_HEIGHT;
+                
+                if(gameState === 'WAITING') {
+                    canFly = true;
+                    heightLimit = 10000; // Allow high flight in waiting area
+                }
+
+                if (keys.space && canFly && this.position.y < heightLimit) {
                     this.velocity.y += 50 * dt; 
                     baseSpeed += 10;
-                    this.stats.mana -= 10 * dt;
+                    if(gameState !== 'WAITING') this.stats.mana -= 10 * dt;
                     this.flapTimer += dt * 15;
                 } else {
                     this.stats.mana = Math.min(this.maxMana, this.stats.mana + 5 * dt);
@@ -1787,12 +1895,30 @@
                     this.position.copy(nextPos);
                 }
 
+                // Ground collisions
                 if (world) {
-                    const terrainH = world.getTerrainHeight(this.position.x, this.position.z);
-                    const safeH = terrainH + 5; 
-                    if(this.position.y < safeH) {
-                        this.position.y = safeH;
-                        this.velocity.y = Math.max(0, this.velocity.y);
+                    let terrainH;
+                    if(gameState === 'WAITING') {
+                        // Fake floor for waiting area
+                        terrainH = 510; 
+                        // If player falls off the spawn island, respawn them
+                        if(this.position.y < 300) {
+                            this.position.set(5000, 600, 5000);
+                            this.velocity.set(0,0,0);
+                        }
+                    } else {
+                        terrainH = world.getTerrainHeight(this.position.x, this.position.z);
+                        const safeH = terrainH + 5; 
+                        if(this.position.y < safeH) {
+                            this.position.y = safeH;
+                            this.velocity.y = Math.max(0, this.velocity.y);
+                        }
+                    }
+                    
+                    // Simple collision with spawn island floor
+                    if(gameState === 'WAITING' && this.position.y < 522 && Math.abs(this.position.x - 5000) < 150 && Math.abs(this.position.z - 5000) < 150) {
+                         this.position.y = 522;
+                         this.velocity.y = Math.max(0, this.velocity.y);
                     }
                 } else if(this.position.y < 5) {
                     this.position.y = 5;
@@ -1800,7 +1926,7 @@
                 }
 
                 const warning = document.getElementById('altitude-warning');
-                if(this.position.y > MAX_FLIGHT_HEIGHT) {
+                if(this.position.y > MAX_FLIGHT_HEIGHT && gameState === 'GAME') {
                     this.position.y = MAX_FLIGHT_HEIGHT;
                     this.velocity.y = Math.min(0, this.velocity.y);
                     warning.style.display = 'block';
@@ -1819,8 +1945,11 @@
                 this.wings[1].rotation.z = -flap * 0.5 - 0.2;
 
                 this.checkNests(dt);
-                const distToCenter = new THREE.Vector2(this.position.x, this.position.z).length();
-                if(distToCenter > world.stormRadius) this.takeDamage(10 * dt);
+                
+                if(gameState === 'GAME') {
+                    const distToCenter = new THREE.Vector2(this.position.x, this.position.z).length();
+                    if(distToCenter > world.stormRadius) this.takeDamage(10 * dt);
+                }
 
                 updateHUD();
             }
@@ -1828,7 +1957,7 @@
 
         class BotAI extends Entity {
             constructor(type) {
-                // Bots usam skin padrão ou aleatória? Padrão por enquanto
+                // Bots usually use default skin
                 super(type, false, 'default');
                 this.state = 'WANDER';
                 this.targetPoint = new THREE.Vector3();
@@ -1913,7 +2042,14 @@
                 }
 
                 if (world) {
-                    const terrainH = world.getTerrainHeight(this.position.x, this.position.z);
+                    let terrainH = world.getTerrainHeight(this.position.x, this.position.z);
+                    // Special logic for waiting island or map
+                    if(gameState === 'WAITING') {
+                       terrainH = 510; // Approx height floor
+                       // If bot far away, treat as void
+                       if(Math.abs(this.position.x - 5000) > 200 || Math.abs(this.position.z - 5000) > 200) terrainH = -100;
+                    }
+
                     const safeH = terrainH + 8; 
                     if (this.position.y < safeH) {
                         this.position.y = safeH;
@@ -1922,13 +2058,13 @@
                     }
                 }
 
-                if (this.position.y > MAX_FLIGHT_HEIGHT) {
+                if (this.position.y > MAX_FLIGHT_HEIGHT && gameState === 'GAME') {
                     this.position.y = MAX_FLIGHT_HEIGHT;
                     this.rotation.x = Math.min(0, this.rotation.x);
                     this.targetPoint.y = Math.min(this.targetPoint.y, MAX_FLIGHT_HEIGHT - 10);
                 }
 
-                if (this.position.length() > world.stormRadius) this.targetPoint.set(0, 40, 0);
+                if (gameState === 'GAME' && this.position.length() > world.stormRadius) this.targetPoint.set(0, 40, 0);
 
                 this.mesh.position.copy(this.position);
                 this.mesh.rotation.copy(this.rotation);
@@ -1936,7 +2072,7 @@
                 this.wings[1].rotation.z = -Math.sin(clock.elapsedTime * 10) * 0.5;
 
                 const distToCenter = new THREE.Vector2(this.position.x, this.position.z).length();
-                if(distToCenter > world.stormRadius) {
+                if(gameState === 'GAME' && distToCenter > world.stormRadius) {
                     this.takeDamage(15 * dt); 
                 }
 
@@ -1960,11 +2096,13 @@
                 p.life -= dt;
                 p.mesh.position.addScaledVector(p.dir, 220 * dt); 
 
-                const terrainH = world.getTerrainHeight(p.mesh.position.x, p.mesh.position.z);
-                if (p.mesh.position.y < terrainH) {
-                    scene.remove(p.mesh);
-                    projectiles.splice(i, 1);
-                    continue;
+                if (gameState === 'GAME') {
+                    const terrainH = world.getTerrainHeight(p.mesh.position.x, p.mesh.position.z);
+                    if (p.mesh.position.y < terrainH) {
+                        scene.remove(p.mesh);
+                        projectiles.splice(i, 1);
+                        continue;
+                    }
                 }
                 
                 if (world.checkCollision(p.mesh.position, 1)) {
@@ -2031,7 +2169,7 @@
                 }
             }
 
-            if(count === 1 && !player.dead) endGame(true);
+            if(count === 1 && !player.dead && gameState === 'GAME') endGame(true);
         }
 
         function endGame(victory) {
@@ -2583,7 +2721,10 @@
                 arenaSessionStats = { kills: 0, placementPoints: 0, farePaid: 0 };
             }
 
-            gameState = 'BUS';
+            // Set state to WAITING instead of BUS
+            gameState = 'WAITING';
+            waitingTimer = 15; // 15 seconds wait
+            
             sessionCoins = 0; 
             killCount = 0; 
             projectiles = []; 
@@ -2592,34 +2733,38 @@
 
             document.getElementById('lobby-ui').style.display = 'none';
             document.getElementById('game-ui').style.display = 'block';
-            document.getElementById('bus-jump-msg').style.display = 'block';
             
-            // Hide player UI elements during BUS phase
-            document.getElementById('crosshair').style.display = 'none';
-            document.getElementById('stats-bar').style.display = 'none';
-            document.getElementById('info-panel').style.display = 'none';
+            // Show HUD elements in waiting
+            document.getElementById('crosshair').style.display = 'block';
+            document.getElementById('stats-bar').style.display = 'block';
+            document.getElementById('info-panel').style.display = 'block';
+            document.getElementById('waiting-msg').style.display = 'block';
+            document.getElementById('waiting-msg').innerText = t('waiting_msg') + waitingTimer;
+            document.getElementById('bus-jump-msg').style.display = 'none';
 
-            // Show mobile controls if active (only Jump/Fly button will work)
+            // Show mobile controls
             if(playerData.controls === 'mobile') {
                 document.getElementById('mobile-controls').style.display = 'block';
             } else {
                 document.getElementById('mobile-controls').style.display = 'none';
             }
             
+            if (playerData.controls === 'pc') {
+                document.body.requestPointerLock();
+            }
+
             scene.clear();
             
             world = new GameWorld(selectedMapKey);
             
-            // Create Bus
-            battleBus = createBattleBus();
-            busPath = -1000;
-            battleBus.position.set(0, 150, busPath);
-            scene.add(battleBus);
+            // Create Spawn Island
+            spawnIsland = createSpawnIsland();
+            scene.add(spawnIsland);
 
+            // Spawn Player on Island
             player = new PlayerController(selectedBirdKey, selectedSkinKey);
-            player.mesh.visible = false; // Hide player while on bus
-            player.dead = true; // Prevent updates
-
+            player.position.set(5000, 520, 5000); 
+            
             const types = Object.keys(BIRD_STATS);
             for(let i=0; i<49; i++) {
                 let type = types[i % types.length];
@@ -2628,6 +2773,44 @@
             }
 
             updateAliveCount();
+        }
+
+        // Logic to transition from Waiting to Bus
+        function startMatchBusPhase() {
+            gameState = 'BUS';
+            document.getElementById('waiting-msg').style.display = 'none';
+            document.getElementById('bus-jump-msg').style.display = 'block';
+            
+            // Remove Spawn Island
+            scene.remove(spawnIsland);
+            
+            // Reset player for bus ride
+            player.mesh.visible = false;
+            player.dead = true;
+            player.isStealthed = false;
+            player.isShielded = false;
+            player.stats.hp = player.maxHp;
+            player.stats.mana = player.maxMana;
+
+            // UI Cleanup for bus ride
+            document.getElementById('crosshair').style.display = 'none';
+            document.getElementById('stats-bar').style.display = 'none';
+            document.getElementById('info-panel').style.display = 'none';
+
+            // Create Bus
+            battleBus = createBattleBus();
+            busPath = -1000;
+            battleBus.position.set(0, 150, busPath);
+            scene.add(battleBus);
+            
+            // Reset Bots to map positions
+            bots.forEach(b => {
+                const ang = Math.random()*Math.PI*2;
+                const spawnRad = 80 + Math.random() * 700;
+                b.position.set(Math.cos(ang)*spawnRad, 100, Math.sin(ang)*spawnRad);
+                b.velocity.set(0,0,0);
+                b.stats.hp = b.maxHp;
+            });
         }
 
         function jumpFromBus() {
@@ -2669,15 +2852,15 @@
             document.addEventListener('mousedown', () => {
                 if(gameState === 'LOBBY') return;
                 // Only lock pointer if PC controls are active
-                if(playerData.controls === 'pc' && gameState === 'GAME') {
+                if(playerData.controls === 'pc' && (gameState === 'GAME' || gameState === 'WAITING')) {
                     document.body.requestPointerLock();
                 }
-                if(player && playerData.controls === 'pc' && gameState === 'GAME') player.fire();
+                if(player && playerData.controls === 'pc' && (gameState === 'GAME' || gameState === 'WAITING')) player.fire();
             });
             document.addEventListener('mousemove', e => {
                 if(playerData.controls === 'pc' && (document.pointerLockElement === document.body || gameState === 'BUS')) {
                     const sens = 0.002;
-                    if (gameState === 'GAME') {
+                    if (gameState === 'GAME' || gameState === 'WAITING') {
                         player.yaw -= e.movementX * sens;
                         player.pitch -= e.movementY * sens;
                         player.pitch = Math.max(-1.2, Math.min(1.2, player.pitch));
@@ -2723,7 +2906,7 @@
             const fireBtn = document.getElementById('mob-fire');
             fireBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                if(player && !player.dead && gameState === 'GAME') player.fire();
+                if(player && !player.dead && (gameState === 'GAME' || gameState === 'WAITING')) player.fire();
             });
 
             // Camera movement via touch (Right side of screen, but generalized)
@@ -2753,7 +2936,7 @@
                         const deltaY = t.clientY - prev.y;
                         const sens = 0.005; 
 
-                        if(gameState === 'GAME' && player) {
+                        if((gameState === 'GAME' || gameState === 'WAITING') && player) {
                             player.yaw -= deltaX * sens;
                             player.pitch -= deltaY * sens;
                             player.pitch = Math.max(-1.2, Math.min(1.2, player.pitch));
@@ -2792,6 +2975,26 @@
                 
                 renderer.render(scene, camera);
             } 
+            else if (gameState === 'WAITING') {
+                // Timer Logic
+                waitingTimer -= dt;
+                document.getElementById('waiting-msg').innerText = t('waiting_msg') + Math.ceil(waitingTimer);
+                
+                if (waitingTimer <= 0) {
+                    startMatchBusPhase();
+                }
+
+                if(playerData.controls !== 'pc') {
+                    mouseX = 0; 
+                }
+                
+                if(player) player.update(dt);
+                bots.forEach(b => b.update(dt));
+                if(world) world.update(dt);
+                updateProjectiles(dt);
+
+                renderer.render(scene, camera);
+            }
             else if (gameState === 'BUS') {
                 busPath += 50 * dt;
                 if(battleBus) {
